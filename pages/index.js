@@ -1,115 +1,42 @@
-import Head from 'next/head';
-import styles from '../styles/Home.module.css';
+import * as d3 from "d3";
+import { useEffect, useRef, useState } from "react";
+import { NewAppBar } from "./NewAppBar.js";
 
-export default function Home() {
+export default function Home({ _jsonData, _posData }) {
+  useEffect(() => {});
+  const width = 400;
+  const height = 800;
+  const margin = 50;
+  const imageSize = 4.5;
   return (
-    <div className={styles.container}>
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <main>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
-
-        <p className={styles.description}>
-          Get started by editing <code>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel" className={styles.logo} />
-        </a>
-      </footer>
-
-      <style jsx>{`
-        main {
-          padding: 5rem 0;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-        }
-        footer {
-          width: 100%;
-          height: 100px;
-          border-top: 1px solid #eaeaea;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
-        footer img {
-          margin-left: 0.5rem;
-        }
-        footer a {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          text-decoration: none;
-          color: inherit;
-        }
-        code {
-          background: #fafafa;
-          border-radius: 5px;
-          padding: 0.75rem;
-          font-size: 1.1rem;
-          font-family: Menlo, Monaco, Lucida Console, Liberation Mono,
-            DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
-        }
-      `}</style>
-
-      <style jsx global>{`
-        html,
-        body {
-          padding: 0;
-          margin: 0;
-          font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
-            Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue,
-            sans-serif;
-        }
-        * {
-          box-sizing: border-box;
-        }
-      `}</style>
+    <div>
+      <NewAppBar />
+      <ZoomableSVG width={width} height={height}>
+        <g>
+          <circle x="30" y="40" r="100"></circle>
+        </g>
+      </ZoomableSVG>
     </div>
-  )
+  );
+}
+
+function ZoomableSVG({ children, width, height }) {
+  const svgRef = useRef();
+  const [k, setK] = useState(1);
+  const [x, setX] = useState(0);
+  const [y, setY] = useState(0);
+  useEffect(() => {
+    const zoom = d3.zoom().on("zoom", (event) => {
+      const { x, y, k } = event.transform;
+      setK(k);
+      setX(x);
+      setY(y);
+    });
+    d3.select(svgRef.current).call(zoom);
+  }, []);
+  return (
+    <svg ref={svgRef} viewBox="0 0 800 1200" style={{ cursor: "grab" }}>
+      <g transform={`translate(${x},${y})scale(${k})`}>{children}</g>
+    </svg>
+  );
 }
