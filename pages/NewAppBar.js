@@ -10,9 +10,20 @@ import MenuIcon from "@mui/icons-material/Menu";
 import { styled, useTheme } from "@mui/material/styles";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import { TextField } from "@mui/material";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableRow from "@mui/material/TableRow";
 
-export function NewAppBar({}) {
+export function NewAppBar({ history }) {
+  const days = "2023/6-7-2023/7/7";
+  function createData(id) {
+    return { id };
+  }
+  const rows = history.map((d) => {
+    return createData(d);
+  });
   const [menu, setMenu] = useState([400, 400]);
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -91,41 +102,21 @@ export function NewAppBar({}) {
             )}
           </IconButton>
         </DrawerHeader>
+        <TableContainer>
+          <Table sx={{ minWidth: 400 }} aria-label="custom pagination table">
+            <TableBody>
+              {rows.map((row) => (
+                <TableRow key={row.name}>
+                  <TableCell component="th" scope="row">
+                    {row.id}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Drawer>
     </Box>
-  );
-}
-
-function MinMax({ mm, setmm, text }) {
-  return (
-    <div>
-      <Typography
-        variant="h6"
-        noWrap
-        component="div"
-        sx={{ marginTop: "2rem" }}
-      >
-        {text}
-      </Typography>
-      <TextField
-        id="outlined-basic"
-        label="最小値"
-        variant="outlined"
-        type={"number"}
-        value={mm[0]}
-        onChange={(event) => setmm([event.target.value, mm[1]])}
-        sx={{ marginTop: "1rem" }}
-      />
-      <TextField
-        id="outlined-basic"
-        label="最大値"
-        variant="outlined"
-        type={"number"}
-        value={mm[1]}
-        onChange={(event) => setmm([mm[0], event.target.value])}
-        sx={{ marginTop: "1rem" }}
-      />
-    </div>
   );
 }
 
