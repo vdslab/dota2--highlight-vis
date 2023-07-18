@@ -15,15 +15,14 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
+import { TextField } from "@mui/material";
 
-export function NewAppBar({ history }) {
+export function NewAppBar({ keys, mins, maxs }) {
   const days = "2023/6-7-2023/7/7";
   function createData(id) {
     return { id };
   }
-  const rows = history.map((d) => {
-    return createData(d);
-  });
+
   const [menu, setMenu] = useState([400, 400]);
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -102,21 +101,52 @@ export function NewAppBar({ history }) {
             )}
           </IconButton>
         </DrawerHeader>
+        <FormControl sx={{ pl: 3 }}>
+          {keys.map((k, index) => {
+            <MinMax text={k} min={mins[index]} max={maxs[index]} />;
+          })}
+        </FormControl>
         <TableContainer>
           <Table sx={{ minWidth: 400 }} aria-label="custom pagination table">
-            <TableBody>
-              {rows.map((row) => (
-                <TableRow key={row.name}>
-                  <TableCell component="th" scope="row">
-                    {row.id}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
+            <TableBody></TableBody>
           </Table>
         </TableContainer>
       </Drawer>
     </Box>
+  );
+}
+
+function MinMax({ text, min, max }) {
+  console.log("Hello");
+  return (
+    <div>
+      <Typography
+        variant="h6"
+        noWrap
+        component="div"
+        sx={{ marginTop: "2rem" }}
+      >
+        {text}
+      </Typography>
+      <TextField
+        id="outlined-basic"
+        label="min"
+        variant="outlined"
+        type={"number"}
+        value={min}
+        onChange={(event) => (min = event.target.value)}
+        sx={{ marginTop: "1rem" }}
+      />
+      <TextField
+        id="outlined-basic"
+        label="max"
+        variant="outlined"
+        type={"number"}
+        value={max}
+        onChange={(event) => (max = event.target.value)}
+        sx={{ marginTop: "1rem" }}
+      />
+    </div>
   );
 }
 

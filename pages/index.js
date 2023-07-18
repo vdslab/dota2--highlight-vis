@@ -6,21 +6,19 @@ import { FormControl, IconButton } from "@mui/material";
 import { styled, useTheme } from "@mui/material/styles";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import { request } from "./api";
 
 export default function Home({ _nodesData, _linksData }) {
-  const nodesCount = 10;
   const [nodesData, setNodesData] = useState(_nodesData);
   const [linksData, setLinksData] = useState(_linksData);
   const [isShowNodeData, setIsShowNodeData] = useState(false);
   const [clickedId, setClickedId] = useState(null);
-  const [history, setHistory] = useState([]);
-  for (let i = 0; i < nodesData; i++) {
-    s = nodesData[i].properties.id;
-    t1 = nodesData[i].properties.connect1;
-    t2 = nodesData[i].properties.connect2;
-  }
-  let x = 0;
-
+  const [clickedMatchId, setClickedMathchId] = useState(null);
+  const [keysList, setKeysList] = useState(
+    Object.keys(nodesData[0]["propaties"])
+  );
+  let thresholdsMin = new Array(keysList.length).fill(0);
+  let thresholdsMax = new Array(keysList.length).fill(100);
   const DrawerHeader = styled("div")(({ theme }) => ({
     background: "#1976d2",
     display: "left",
@@ -34,9 +32,7 @@ export default function Home({ _nodesData, _linksData }) {
   const handleDrawerClose = () => {
     setIsShowNodeData(false);
   };
-  useEffect(() => {
-    x++;
-  }, [clickedId]);
+  useEffect(() => {}, [clickedId]);
   const width = 1400;
   const height = 1200;
   const margin = 50;
@@ -64,7 +60,7 @@ export default function Home({ _nodesData, _linksData }) {
   const { xScale, yScale } = xyScale();
   return (
     <div>
-      <NewAppBar history={history} />
+      <NewAppBar keys={keysList} mins={thresholdsMin} maxs={thresholdsMax} />
       <Drawer
         sx={{
           width: isShowNodeData,
@@ -87,7 +83,7 @@ export default function Home({ _nodesData, _linksData }) {
             )}
           </IconButton>
         </DrawerHeader>
-        <Subcontent id={clickedId} />
+        <Subcontent id={clickedMatchId} />
       </Drawer>
       <ZoomableSVG width={width} height={height}>
         {linksData.map((data, index) => {
@@ -102,7 +98,7 @@ export default function Home({ _nodesData, _linksData }) {
                   y1={node1.y}
                   y2={node2.y}
                   stroke="red"
-                  stroke-width="4"
+                  strokeWidth="4"
                 ></line>
               </g>
             );
@@ -127,7 +123,7 @@ export default function Home({ _nodesData, _linksData }) {
               onClick={() => {
                 setIsShowNodeData(true);
                 setClickedId(data.id);
-                setHistory([...history, data.id]);
+                setClickedMathchId(data.matchId);
               }}
             >
               <circle
@@ -164,8 +160,10 @@ export async function getStaticProps() {
     if (d.type == "node") {
       _nodesData[_nodesData.length] = {
         id: d.id,
+        matchId: d.properties.matchId,
         x: d.properties.x * 300,
         y: d.properties.y * 300,
+        propaties: d.properties,
       };
     } else if (d.type == "relationship") {
       _linksData[_linksData.length] = {
@@ -202,24 +200,45 @@ function ZoomableSVG({ children, width, height }) {
 }
 
 function Subcontent({ id }) {
+  const [subData, setSubData] = useState();
+  const [keysList, setKeysList] = useState();
+  const x = 0;
+  useEffect(() => {
+    (async () => {
+      const rawDataArray = await request(id);
+      if ("errors" in rawDataArray) {
+        console.log("error");
+      } else {
+        const dataArray = rawDataArray.data.match.players;
+        const keyList = Object.keys(dataArray[0]);
+        let rawSubData = new Array(Object.keys(dataArray[0]).length);
+        for (let i = 0; i < rawSubData.length; i++)
+          rawSubData[i] = new Array(dataArray.length);
+        for (let i = 0; i < dataArray.length; i++) {
+          for (let j = 0; j < Object.keys(dataArray[i]).length; j++) {
+            rawSubData[j][i] = dataArray[i][keyList[j]];
+          }
+        }
+        setSubData(rawSubData);
+        setKeysList(keyList);
+      }
+    })();
+  }, [id]);
+  console.log(subData);
   const subCharts = ["winrate", "gold", "LVL"];
-
-  return (
-    <div>
-      <h1 style={{ textAlign: "center" }}>{id}</h1>
-      {subCharts.map((t) => {
-        return <LineGraph text={t} key={t} />;
-      })}
-    </div>
-  );
+  if (subData) {
+    return (
+      <div>
+        <h1 style={{ textAlign: "center" }}>{id}</h1>
+        {subData.map((data, index) => {
+          return <LineGraph text={keysList[index]} key={index} data={data} />;
+        })}
+      </div>
+    );
+  }
 }
 
-function LineGraph({ text }) {
-  const winRates = [
-    0.3, 0.31, 0.29, 0.27, 0.33, 0.34, 0.35, 0.31, 0.25, 0.33, 0.35, 0.44, 0.46,
-    0.45, 0.33, 0.32, 0.21, 0.3, 0.47, 0.32, 0.4, 0.63, 0.57, 0.64, 0.7, 0.83,
-  ];
-
+function LineGraph({ text, data }) {
   const contentW = 800,
     contentH = 400;
   const margin = { top: 50, bottom: 100, left: 350, right: 100 };
@@ -230,13 +249,10 @@ function LineGraph({ text }) {
 
   const xScale = d3
     .scaleLinear()
-    .domain([0, winRates.length - 1])
+    .domain([0, data.length - 1])
     .range([0, contentW]);
 
-  const yScale = d3
-    .scaleLinear()
-    .domain(d3.extent(winRates))
-    .range([contentH, 0]);
+  const yScale = d3.scaleLinear().domain(d3.extent(data)).range([contentH, 0]);
 
   const line = d3
     .line()
@@ -290,12 +306,7 @@ function LineGraph({ text }) {
             })}
           </g>
           <g>
-            <path
-              d={line(winRates)}
-              fill="none"
-              stroke={dataCol}
-              strokeWidth="2"
-            />
+            <path d={line(data)} fill="none" stroke={dataCol} strokeWidth="2" />
           </g>
         </g>
       </svg>
