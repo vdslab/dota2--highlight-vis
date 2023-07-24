@@ -41,10 +41,16 @@ export default function Home({ _nodesData, _linksData, _keyList, _keyValues }) {
         }
       }
       setNodesData(
-        nodesData.map((node, index) => (index === i ? node["flag"] : flag))
+        nodesData.map((node, index) => {
+          if (i == index) {
+            node["flag"] = flag;
+          }
+          return node;
+        })
       );
     }
     setNodesData(nodesData.filter((v) => v));
+    console.log(nodesData);
   }, [keyValues]);
   const width = 1400;
   const height = 1200;
