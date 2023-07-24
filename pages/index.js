@@ -8,17 +8,14 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { request } from "./api";
 
-export default function Home({ _nodesData, _linksData }) {
+export default function Home({ _nodesData, _linksData, _keyList, _keyValues }) {
   const [nodesData, setNodesData] = useState(_nodesData);
   const [linksData, setLinksData] = useState(_linksData);
   const [isShowNodeData, setIsShowNodeData] = useState(false);
   const [clickedId, setClickedId] = useState(null);
   const [clickedMatchId, setClickedMathchId] = useState(null);
-  const [keysList, setKeysList] = useState(
-    Object.keys(nodesData[0]["propaties"])
-  );
-  let thresholdsMin = new Array(keysList.length).fill(0);
-  let thresholdsMax = new Array(keysList.length).fill(100);
+  const [keysList, setKeysList] = useState(_keyList);
+  const [keyValues, setKeyValues] = useState(_keyValues);
   const DrawerHeader = styled("div")(({ theme }) => ({
     background: "#1976d2",
     display: "left",
@@ -32,11 +29,26 @@ export default function Home({ _nodesData, _linksData }) {
   const handleDrawerClose = () => {
     setIsShowNodeData(false);
   };
-  useEffect(() => {}, [clickedId]);
+  useEffect(() => {
+    for (let i = 0; i < nodesData.length; i++) {
+      let flag = true;
+      for (let j = 0; j < keyValues.length; j++) {
+        if (
+          keyValues[j][0] > nodesData[i]["properties"][keysList[j]] ||
+          keyValues[j][1] < nodesData[i]["properties"][keysList[j]]
+        ) {
+          flag = false;
+        }
+      }
+      setNodesData(
+        nodesData.map((node, index) => (index === i ? node["flag"] : flag))
+      );
+    }
+    setNodesData(nodesData.filter((v) => v));
+  }, [keyValues]);
   const width = 1400;
   const height = 1200;
   const margin = 50;
-
   function xyScale() {
     const xScale = d3
       .scaleLinear()
@@ -56,11 +68,15 @@ export default function Home({ _nodesData, _linksData }) {
       .nice();
     return { xScale, yScale };
   }
-
+  console.log(keyValues);
   const { xScale, yScale } = xyScale();
   return (
     <div>
-      <NewAppBar keys={keysList} mins={thresholdsMin} maxs={thresholdsMax} />
+      <NewAppBar
+        keysList={keysList}
+        keyValues={keyValues}
+        setKeyValues={setKeyValues}
+      />
       <Drawer
         sx={{
           width: isShowNodeData,
@@ -89,62 +105,66 @@ export default function Home({ _nodesData, _linksData }) {
         {linksData.map((data, index) => {
           const node1 = nodesData.find((x) => data.source == x.id);
           const node2 = nodesData.find((x) => data.target == x.id);
-          if (node1.id == clickedId || node2.id == clickedId) {
-            return (
-              <g key={index}>
-                <line
-                  x1={node1.x}
-                  x2={node2.x}
-                  y1={node1.y}
-                  y2={node2.y}
-                  stroke="red"
-                  strokeWidth="4"
-                ></line>
-              </g>
-            );
-          } else {
-            return (
-              <g key={index}>
-                <line
-                  x1={node1.x}
-                  x2={node2.x}
-                  y1={node1.y}
-                  y2={node2.y}
-                  stroke="black"
-                ></line>
-              </g>
-            );
+          if (node1.flag && node2.flag) {
+            if (node1.id == clickedId || node2.id == clickedId) {
+              return (
+                <g key={index}>
+                  <line
+                    x1={node1.x}
+                    x2={node2.x}
+                    y1={node1.y}
+                    y2={node2.y}
+                    stroke="red"
+                    strokeWidth="4"
+                  ></line>
+                </g>
+              );
+            } else {
+              return (
+                <g key={index}>
+                  <line
+                    x1={node1.x}
+                    x2={node2.x}
+                    y1={node1.y}
+                    y2={node2.y}
+                    stroke="black"
+                  ></line>
+                </g>
+              );
+            }
           }
         })}
         {nodesData.map((data, index) => {
-          return (
-            <g
-              key={data.id}
-              onClick={() => {
-                setIsShowNodeData(true);
-                setClickedId(data.id);
-                setClickedMathchId(data.matchId);
-              }}
-            >
-              <circle
-                fill="none"
-                stroke="black"
-                cx={data.x}
-                cy={data.y}
-                r={30}
-              ></circle>
-              <text
-                textAnchor="middle"
-                stroke="black"
-                fill="Red"
-                fontSize={"10px"}
-                x={data.x}
-                y={data.y}
+          if (data.flag) {
+            return (
+              <g
+                key={data.id}
+                onClick={() => {
+                  setIsShowNodeData(true);
+                  setClickedId(data.id);
+                  setClickedMathchId(data.matchId);
+                }}
               >
-                {data.id}
-              </text>
-            </g>
-          );
+                <circle
+                  fill="none"
+                  stroke="black"
+                  cx={data.x}
+                  cy={data.y}
+                  r={30}
+                ></circle>
+                <text
+                  textAnchor="middle"
+                  stroke="black"
+                  fill="Red"
+                  fontSize={"10px"}
+                  x={data.x}
+                  y={data.y}
+                >
+                  {data.id}
+                </text>
+              </g>
+            );
+          }
         })}
       </ZoomableSVG>
     </div>
@@ -156,14 +176,23 @@ export async function getStaticProps() {
   const newData = JSON.parse(fs.readFileSync("./public/out2.json"));
   const _nodesData = [];
   const _linksData = [];
+  let _keyList = null;
   newData.map((d) => {
     if (d.type == "node") {
+      if (!_keyList) {
+        _keyList = Object.keys(d.properties);
+        _keyList.splice(_keyList.indexOf("x"), 1);
+        _keyList.splice(_keyList.indexOf("y"), 1);
+        _keyList.splice(_keyList.indexOf("matchId"), 1);
+        _keyList.splice(_keyList.indexOf("analysisOutcome"), 1);
+      }
       _nodesData[_nodesData.length] = {
         id: d.id,
         matchId: d.properties.matchId,
         x: d.properties.x * 300,
         y: d.properties.y * 300,
-        propaties: d.properties,
+        properties: d.properties,
+        flag: true,
       };
     } else if (d.type == "relationship") {
       _linksData[_linksData.length] = {
@@ -173,8 +202,18 @@ export async function getStaticProps() {
       };
     }
   });
+  let _keyValues = new Array(_keyList.length);
+  for (let i = 0; i < _keyValues.length; i++) {
+    _keyValues[i] = 0;
+  }
+  for (let i = 0; i < _keyList.length; i++) {
+    _keyValues[i] = [
+      Math.min(..._nodesData.map((n) => n["properties"][_keyList[i]])),
+      Math.max(..._nodesData.map((n) => n["properties"][_keyList[i]])),
+    ];
+  }
   return {
-    props: { _nodesData, _linksData },
+    props: { _nodesData, _linksData, _keyList, _keyValues },
   };
 }
 
@@ -200,8 +239,9 @@ function ZoomableSVG({ children, width, height }) {
 }
 
 function Subcontent({ id }) {
-  const [subData, setSubData] = useState();
+  const [subData, setSubData] = useState(new Array(2));
   const [keysList, setKeysList] = useState();
+  const [playersList, setPlayersList] = useState();
   const x = 0;
   useEffect(() => {
     (async () => {
@@ -210,22 +250,24 @@ function Subcontent({ id }) {
         console.log("error");
       } else {
         const dataArray = rawDataArray.data.match.players;
-        const keyList = Object.keys(dataArray[0]);
-        let rawSubData = new Array(Object.keys(dataArray[0]).length);
-        for (let i = 0; i < rawSubData.length; i++)
-          rawSubData[i] = new Array(dataArray.length);
-        for (let i = 0; i < dataArray.length; i++) {
-          for (let j = 0; j < Object.keys(dataArray[i]).length; j++) {
-            rawSubData[j][i] = dataArray[i][keyList[j]];
+        const keyList = Object.keys(dataArray[0]["stats"]);
+        let players = new Array(10);
+        let rawSubData = new Array(keyList.length);
+        for (let i = 0; i < rawSubData.length; i++) {
+          rawSubData[i] = new Array(10);
+        }
+        for (let i = 0; i < keyList.length; i++) {
+          for (let j = 0; j < dataArray.length; j++) {
+            players[j] = dataArray[j]["hero"]["name"].substr(14);
+            rawSubData[i][j] = dataArray[j]["stats"][keyList[i]];
           }
         }
         setSubData(rawSubData);
         setKeysList(keyList);
+        setPlayersList(players);
       }
     })();
   }, [id]);
-  console.log(subData);
-  const subCharts = ["winrate", "gold", "LVL"];
   if (subData) {
     return (
       <div>
@@ -249,10 +291,15 @@ function LineGraph({ text, data }) {
 
   const xScale = d3
     .scaleLinear()
-    .domain([0, data.length - 1])
-    .range([0, contentW]);
+    .domain([0, data[0].length - 1])
+    .range([0, contentW])
+    .nice();
 
-  const yScale = d3.scaleLinear().domain(d3.extent(data)).range([contentH, 0]);
+  const yScale = d3
+    .scaleLinear()
+    .domain(d3.extent(data[0]))
+    .range([contentH, 0])
+    .nice();
 
   const line = d3
     .line()
@@ -306,7 +353,17 @@ function LineGraph({ text, data }) {
             })}
           </g>
           <g>
-            <path d={line(data)} fill="none" stroke={dataCol} strokeWidth="2" />
+            {data.map((d, index) => {
+              return (
+                <path
+                  d={line(d)}
+                  key={index}
+                  fill="none"
+                  stroke={dataCol}
+                  strokeWidth="2"
+                />
+              );
+            })}
           </g>
         </g>
       </svg>

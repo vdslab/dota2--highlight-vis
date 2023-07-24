@@ -1,9 +1,9 @@
 import * as React from "react";
+import { useEffect, useRef, useState } from "react";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Drawer from "@mui/material/Drawer";
 import Typography from "@mui/material/Typography";
-import { useState } from "react";
 import { FormControl, IconButton } from "@mui/material";
 import { Box } from "@mui/system";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -12,18 +12,10 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
-import TableRow from "@mui/material/TableRow";
 import { TextField } from "@mui/material";
 
-export function NewAppBar({ keys, mins, maxs }) {
-  const days = "2023/6-7-2023/7/7";
-  function createData(id) {
-    return { id };
-  }
-
-  const [menu, setMenu] = useState([400, 400]);
+export function NewAppBar({ keysList, keyValues, setKeyValues }) {
   const handleDrawerOpen = () => {
     setOpen(true);
   };
@@ -33,17 +25,8 @@ export function NewAppBar({ keys, mins, maxs }) {
   };
 
   const [open, setOpen] = React.useState(false);
-  const [heroListOpen, setHeroListOpen] = React.useState(false);
 
   const theme = useTheme();
-  const selectStyles = {
-    control: (styles) => ({ ...styles, margin: "1rem" }),
-    option: (styles) => {
-      return {
-        ...styles,
-      };
-    },
-  };
   const DrawerHeader = styled("div")(({ theme }) => ({
     background: "#1976d2",
     display: "flex",
@@ -52,6 +35,7 @@ export function NewAppBar({ keys, mins, maxs }) {
     ...theme.mixins.toolbar,
     justifyContent: "flex-end",
   }));
+  useEffect(() => {});
   return (
     <Box
       sx={{ display: "flex", border: "1px solid" }}
@@ -81,10 +65,10 @@ export function NewAppBar({ keys, mins, maxs }) {
       </AppBar>
       <Drawer
         sx={{
-          width: menu[0],
+          width: 400,
           flexShrink: 0,
           "& .MuiDrawer-paper": {
-            width: menu[0],
+            width: 400,
             boxSizing: "border-box",
           },
         }}
@@ -101,11 +85,20 @@ export function NewAppBar({ keys, mins, maxs }) {
             )}
           </IconButton>
         </DrawerHeader>
-        <FormControl sx={{ pl: 3 }}>
-          {keys.map((k, index) => {
-            <MinMax text={k} min={mins[index]} max={maxs[index]} />;
-          })}
-        </FormControl>
+        {keysList.map((k, index) => {
+          return (
+            <MinMax
+              key={k}
+              text={k}
+              min={keyValues[index][0]}
+              max={keyValues[index][1]}
+              index={index}
+              keyValues={keyValues}
+              setKeyValues={setKeyValues}
+            ></MinMax>
+          );
+        })}
+        <FormControl sx={{ pl: 3 }}></FormControl>
         <TableContainer>
           <Table sx={{ minWidth: 400 }} aria-label="custom pagination table">
             <TableBody></TableBody>
@@ -116,8 +109,8 @@ export function NewAppBar({ keys, mins, maxs }) {
   );
 }
 
-function MinMax({ text, min, max }) {
-  console.log("Hello");
+function MinMax({ text, min, max, index, keyValues, setKeyValues }) {
+  const [x, setX] = useState(0);
   return (
     <div>
       <Typography
@@ -134,7 +127,15 @@ function MinMax({ text, min, max }) {
         variant="outlined"
         type={"number"}
         value={min}
-        onChange={(event) => (min = event.target.value)}
+        onChange={(event) => {
+          setKeyValues(
+            keyValues.map((k, i) => {
+              return index === i
+                ? [Number(event.target.value), k[1]]
+                : [k[0], k[1]];
+            })
+          );
+        }}
         sx={{ marginTop: "1rem" }}
       />
       <TextField
@@ -143,7 +144,15 @@ function MinMax({ text, min, max }) {
         variant="outlined"
         type={"number"}
         value={max}
-        onChange={(event) => (max = event.target.value)}
+        onChange={(event) => {
+          setKeyValues(
+            keyValues.map((k, i) => {
+              return index === i
+                ? [k[0], Number(event.target.value)]
+                : [k[0], k[1]];
+            })
+          );
+        }}
         sx={{ marginTop: "1rem" }}
       />
     </div>
