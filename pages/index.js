@@ -7,8 +7,15 @@ import { styled, useTheme } from "@mui/material/styles";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { request } from "./api";
+import { Modal, Tooltip } from "@mui/material";
 
-export default function Home({ _nodesData, _linksData, _keyList, _keyValues }) {
+export default function Home({
+  _nodesData,
+  _linksData,
+  _keyList,
+  _keyValues,
+  _leagueNames,
+}) {
   const [nodesData, setNodesData] = useState(_nodesData);
   const [linksData, setLinksData] = useState(_linksData);
   const [isShowNodeData, setIsShowNodeData] = useState(false);
@@ -16,6 +23,7 @@ export default function Home({ _nodesData, _linksData, _keyList, _keyValues }) {
   const [clickedMatchId, setClickedMathchId] = useState(null);
   const [keysList, setKeysList] = useState(_keyList);
   const [keyValues, setKeyValues] = useState(_keyValues);
+  const leagueNames = _leagueNames;
   const DrawerHeader = styled("div")(({ theme }) => ({
     background: "#1976d2",
     display: "left",
@@ -24,8 +32,11 @@ export default function Home({ _nodesData, _linksData, _keyList, _keyValues }) {
     ...theme.mixins.toolbar,
     justifyContent: "flex-end",
   }));
+  const colorScale = d3
+    .scaleLinear()
+    .domain([0, 10, 21])
+    .range(["red", "yellow", "blue"]);
   const theme = useTheme();
-
   const handleDrawerClose = () => {
     setIsShowNodeData(false);
   };
@@ -50,7 +61,6 @@ export default function Home({ _nodesData, _linksData, _keyList, _keyValues }) {
       );
     }
     setNodesData(nodesData.filter((v) => v));
-    console.log(nodesData);
   }, [keyValues]);
   const width = 1400;
   const height = 1200;
@@ -74,7 +84,6 @@ export default function Home({ _nodesData, _linksData, _keyList, _keyValues }) {
       .nice();
     return { xScale, yScale };
   }
-  console.log(keyValues);
   const { xScale, yScale } = xyScale();
   return (
     <div>
@@ -142,6 +151,11 @@ export default function Home({ _nodesData, _linksData, _keyList, _keyValues }) {
         })}
         {nodesData.map((data, index) => {
           if (data.flag) {
+            let leagueIndex = -1;
+            for (let i = 0; i < leagueNames.length; i++) {
+              if (data.properties.leagueName.includes(leagueNames[i]))
+                leagueIndex = i;
+            }
             return (
               <g
                 key={data.id}
@@ -152,22 +166,12 @@ export default function Home({ _nodesData, _linksData, _keyList, _keyValues }) {
                 }}
               >
                 <circle
-                  fill="none"
+                  fill={colorScale(leagueIndex)}
                   stroke="black"
                   cx={data.x}
                   cy={data.y}
                   r={30}
                 ></circle>
-                <text
-                  textAnchor="middle"
-                  stroke="black"
-                  fill="Red"
-                  fontSize={"10px"}
-                  x={data.x}
-                  y={data.y}
-                >
-                  {data.id}
-                </text>
               </g>
             );
           }
@@ -179,9 +183,10 @@ export default function Home({ _nodesData, _linksData, _keyList, _keyValues }) {
 
 export async function getStaticProps() {
   const fs = require("fs");
-  const newData = JSON.parse(fs.readFileSync("./public/out2.json"));
+  const newData = JSON.parse(fs.readFileSync("./public/out.json"));
   const _nodesData = [];
   const _linksData = [];
+  let _leagueNames = [];
   let _keyList = null;
   newData.map((d) => {
     if (d.type == "node") {
@@ -191,7 +196,17 @@ export async function getStaticProps() {
         _keyList.splice(_keyList.indexOf("y"), 1);
         _keyList.splice(_keyList.indexOf("matchId"), 1);
         _keyList.splice(_keyList.indexOf("analysisOutcome"), 1);
+        _keyList.splice(_keyList.indexOf("leagueName"), 1);
+        _keyList.splice(_keyList.indexOf("loseTeamName"), 1);
+        _keyList.splice(_keyList.indexOf("winTeamName"), 1);
       }
+      if (!_leagueNames.includes(d.properties.leagueName.replace("?", "-"))) {
+        _leagueNames[_leagueNames.length] = d.properties.leagueName.replace(
+          "?",
+          "-"
+        );
+      }
+
       _nodesData[_nodesData.length] = {
         id: d.id,
         matchId: d.properties.matchId,
@@ -218,8 +233,13 @@ export async function getStaticProps() {
       Math.max(..._nodesData.map((n) => n["properties"][_keyList[i]])),
     ];
   }
+  for (let i = 0; i < _leagueNames.length; i++) {
+    if (_leagueNames[i].indexOf("I") > 0)
+      _leagueNames[i] = _leagueNames[i].substr(0, _leagueNames[i].indexOf("I"));
+  }
+  _leagueNames = [...new Set(_leagueNames)];
   return {
-    props: { _nodesData, _linksData, _keyList, _keyValues },
+    props: { _nodesData, _linksData, _keyList, _keyValues, _leagueNames },
   };
 }
 
@@ -279,31 +299,39 @@ function Subcontent({ id }) {
       <div>
         <h1 style={{ textAlign: "center" }}>{id}</h1>
         {subData.map((data, index) => {
-          return <LineGraph text={keysList[index]} key={index} data={data} />;
+          return (
+            <LineGraph
+              text={keysList[index]}
+              key={index}
+              data={data}
+              playersList={playersList}
+            />
+          );
         })}
       </div>
     );
   }
 }
 
-function LineGraph({ text, data }) {
+function LineGraph({ text, data, playersList }) {
   const contentW = 800,
     contentH = 400;
   const margin = { top: 50, bottom: 100, left: 350, right: 100 };
   const windowW = contentW + margin.left + margin.right;
   const windowH = contentH + margin.top + margin.bottom;
+  const dataCol = d3.schemeCategory10;
   const lineCol = "black";
-  const dataCol = "red";
+  const lineStroke = 3;
+  const [hoverIndex, setHoverIndex] = useState(null);
 
   const xScale = d3
     .scaleLinear()
     .domain([0, data[0].length - 1])
     .range([0, contentW])
     .nice();
-
   const yScale = d3
     .scaleLinear()
-    .domain(d3.extent(data[0]))
+    .domain(d3.extent(data.reduce((a, b) => a.concat(b))))
     .range([contentH, 0])
     .nice();
 
@@ -361,13 +389,22 @@ function LineGraph({ text, data }) {
           <g>
             {data.map((d, index) => {
               return (
-                <path
-                  d={line(d)}
+                <Tooltip
+                  title={playersList[index]}
                   key={index}
-                  fill="none"
-                  stroke={dataCol}
-                  strokeWidth="2"
-                />
+                  arrow
+                  followCursor
+                >
+                  <path
+                    d={line(d)}
+                    key={index}
+                    fill="none"
+                    stroke={dataCol[index]}
+                    strokeWidth={lineStroke + (hoverIndex === index) * 4}
+                    onMouseEnter={() => setHoverIndex(index)}
+                    onMouseLeave={() => setHoverIndex(null)}
+                  />
+                </Tooltip>
               );
             })}
           </g>
