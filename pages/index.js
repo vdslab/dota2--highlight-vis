@@ -22,6 +22,7 @@ export default function Home({
   const [attributesValue, setAttributesValue] = useState(_keyValues);
   const [currentMenu, setCurrentMenu] = useState(0);
   const [clickedNode, setClickedNode] = useState(null);
+  const [clickedAtr, setClickedAtr] = useState(null);
 
   useEffect(() => {
     //console.log(attributesValue);
@@ -53,7 +54,9 @@ export default function Home({
             <Grid xs={12} direction="column" alignItems="center">
               {currentMenu == 0 && attributes.map((e, i) => {
                 return (
-                  <Attributes key={i} attributesValue={attributesValue} setAttributesValue={setAttributesValue} index={i} />
+                  <Attributes key={i} index={i}
+                    attributesValue={attributesValue} setAttributesValue={setAttributesValue}
+                    clickedAtr={clickedAtr} setClickedAtr={setClickedAtr} />
                 )
               })}
               {currentMenu == 1 &&
@@ -63,7 +66,7 @@ export default function Home({
           </Grid.Container>
         </Grid>
         <Grid xs={7} sm={9}>
-          <Chart nodesData={nodesData} linksData={linksData} clickedNode={clickedNode} setClickedNode={setClickedNode} />
+          <Chart nodesData={nodesData} linksData={linksData} clickedNode={clickedNode} setClickedNode={setClickedNode} clickedAtr={clickedAtr != null ? attributes[clickedAtr] : null} />
         </Grid>
       </Grid.Container >
     </NextUIProvider >
@@ -139,14 +142,16 @@ function MyIcon({ type, fill, filled }) {
   )
 }
 
-function Attributes({ attributesValue, setAttributesValue, index }) {
+function Attributes({ attributesValue, setAttributesValue, clickedAtr, setClickedAtr, index }) {
   //console.log(attributesValue);
   const translate = ["戦闘時間", "初キル時間", "最大マルチキル数", "最大キルストリーク数", "勝率平均", "バイバック回数", "勝チームキル数", "負チームキル数"]
+  const clicked = clickedAtr == index;
   return (
     <div>
       <Grid.Container gap={1}>
         <Grid xs={4} direction="row" alignItems="center">
-          <Text h6>{translate[index]}</Text>
+          <Text h6 color={clicked ? "primary" : ""} style={{ cursor: "pointer" }}
+            onClick={() => { setClickedAtr(clicked ? null : index) }}>{translate[index]}</Text>
         </Grid>
         <Grid xs={4} direction="column" alignItems="center">
           <Input label="最小値" type="number" value={attributesValue[index][0]} onChange={(e) => {
@@ -178,9 +183,10 @@ function Detail({ clickedNode, setClickedNode }) {
   )
 }
 
-function Chart({ nodesData, linksData, clickedNode, setClickedNode }) {
+function Chart({ nodesData, linksData, clickedNode, setClickedNode, clickedAtr }) {
   console.log(nodesData);
   console.log(linksData);
+  console.log(clickedAtr);
   const width = 1000;
   const height = 800;
   const margin = 0;
@@ -192,7 +198,10 @@ function Chart({ nodesData, linksData, clickedNode, setClickedNode }) {
   const yScale = clickedNode != null ?
     d3.scaleLinear().domain([clickedNode.y - zoomY, clickedNode.y + zoomY]).range([margin, height - margin]).nice() :
     d3.scaleLinear().domain(d3.extent(nodesData.map(e => e.y))).range([margin, height - margin]).nice();
+  const colorScale =
+    d3.scaleLinear().domain(d3.extent(nodesData.map(e => e.properties[clickedAtr]))).range(['white', 'red']).nice();
   const col = { NONE: "#fff", COMEBACK: "#007bff", STOMPED: "#28a745" }
+
   const r = nodesData.length < 200 || clickedNode != null ? 6 : 3;
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ backgroundColor: "#ddd" }}>
@@ -215,7 +224,12 @@ function Chart({ nodesData, linksData, clickedNode, setClickedNode }) {
         const highlight = clickedNode != null && e.id == clickedNode.id;
         return (
           <g key={e.id}>
-            <circle cx={xScale(e.x)} cy={yScale(e.y)} r={highlight ? r * 1.5 : r} fill={col[e.properties.analysisOutcome]} stroke={highlight ? "#ff69b4" : "none"}
+            <circle cx={xScale(e.x)} cy={yScale(e.y)} r={highlight ? r * 1.5 : r} stroke={highlight ? "#ff69b4" : "none"}
+              fill={
+                clickedAtr == null ?
+                  col[e.properties.analysisOutcome] :
+                  colorScale(e.properties[clickedAtr])
+              }
               style={{ transition: "cx 2s 0.1s, cy 2s 0.1s" }}
               onClick={() => {
                 setClickedNode(e);
