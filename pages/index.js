@@ -19,8 +19,7 @@ export default function Home({
   const [nodesData, setNodesData] = useState(_nodesData);
   const [linksData, setLinksData] = useState(_linksData);
   const [isShowNodeData, setIsShowNodeData] = useState(false);
-  const [clickedId, setClickedId] = useState(null);
-  const [clickedMatchId, setClickedMathchId] = useState(null);
+  const [clickedNode, setClickedNode] = useState(null);
   const [keysList, setKeysList] = useState(_keyList);
   const [keyValues, setKeyValues] = useState(_keyValues);
   const leagueNames = _leagueNames;
@@ -94,14 +93,12 @@ export default function Home({
       />
       <Drawer
         sx={{
-          width: isShowNodeData,
           flexShrink: 0,
           "& .MuiDrawer-paper": {
-            width: isShowNodeData * width,
             boxSizing: "border-box",
           },
         }}
-        variant="persistent"
+        variant="temporary"
         anchor="right"
         open={isShowNodeData}
       >
@@ -114,14 +111,14 @@ export default function Home({
             )}
           </IconButton>
         </DrawerHeader>
-        <Subcontent id={clickedMatchId} />
+        <Subcontent node={clickedNode} />
       </Drawer>
       <ZoomableSVG width={width} height={height}>
         {linksData.map((data, index) => {
           const node1 = nodesData.find((x) => data.source == x.id);
           const node2 = nodesData.find((x) => data.target == x.id);
           if (node1.flag && node2.flag) {
-            if (node1.id == clickedId || node2.id == clickedId) {
+            if (node1 == clickedNode || node2 == clickedNode) {
               return (
                 <g key={index}>
                   <line
@@ -130,7 +127,7 @@ export default function Home({
                     y1={node1.y}
                     y2={node2.y}
                     stroke="red"
-                    strokeWidth="4"
+                    strokeWidth="10"
                   ></line>
                 </g>
               );
@@ -161,8 +158,7 @@ export default function Home({
                 key={data.id}
                 onClick={() => {
                   setIsShowNodeData(true);
-                  setClickedId(data.id);
-                  setClickedMathchId(data.matchId);
+                  setClickedNode(data);
                 }}
               >
                 <circle
@@ -264,10 +260,12 @@ function ZoomableSVG({ children, width, height }) {
   );
 }
 
-function Subcontent({ id }) {
+function Subcontent({ node }) {
+  const id = node.properties.matchId;
   const [subData, setSubData] = useState(new Array(2));
   const [keysList, setKeysList] = useState();
   const [playersList, setPlayersList] = useState();
+  const [winRate, setWinRate] = useState();
   const x = 0;
   useEffect(() => {
     (async () => {
@@ -291,16 +289,24 @@ function Subcontent({ id }) {
         setSubData(rawSubData);
         setKeysList(keyList);
         setPlayersList(players);
+        setWinRate(rawDataArray.data.match.winRates);
       }
     })();
   }, [id]);
+  console.log(winRate);
   if (subData) {
     return (
       <div>
-        <h1 style={{ textAlign: "center" }}>{id}</h1>
+        <h1 style={{ textAlign: "center" }}>
+          {node.properties.leagueName.replace("?", "-")}
+        </h1>
+        <h1 style={{ textAlign: "center" }}>
+          {node.properties.winTeamName} VS {node.properties.loseTeamName}
+        </h1>
+        <LineGraph text={"winrate"} key={"winrate"} data={winRate}></LineGraph>
         {subData.map((data, index) => {
           return (
-            <LineGraph
+            <LineGraphForPlayers
               text={keysList[index]}
               key={index}
               data={data}
@@ -313,7 +319,7 @@ function Subcontent({ id }) {
   }
 }
 
-function LineGraph({ text, data, playersList }) {
+function LineGraphForPlayers({ text, data, playersList }) {
   const contentW = 800,
     contentH = 400;
   const margin = { top: 50, bottom: 100, left: 350, right: 100 };
@@ -412,4 +418,95 @@ function LineGraph({ text, data, playersList }) {
       </svg>
     </div>
   );
+}
+
+function LineGraph({ text, data }) {
+  const contentW = 800,
+    contentH = 400;
+  const margin = { top: 50, bottom: 100, left: 350, right: 100 };
+  const windowW = contentW + margin.left + margin.right;
+  const windowH = contentH + margin.top + margin.bottom;
+  const lineCol = "black";
+  if (data) {
+    const xScale = d3
+      .scaleLinear()
+      .domain([0, data.length - 1])
+      .range([0, contentW])
+      .nice();
+    const yScale = d3
+      .scaleLinear()
+      .domain(d3.extent(data))
+      .range([contentH, 0])
+      .nice();
+
+    const line = d3
+      .line()
+      .x((d, i) => xScale(i))
+      .y((d) => yScale(d));
+    return (
+      <div>
+        <svg width={windowW} height={windowH}>
+          <text x={windowW / 2} y="30" stroke="lineCol" fontSize="20">
+            {text}
+          </text>
+          <g transform={`translate(${margin.left},${margin.top})`}>
+            <g>
+              <line x1="0" y1="0" x2="0" y2={contentH} stroke={lineCol}></line>
+              <text></text>
+              {yScale.ticks().map((item, index) => {
+                return (
+                  <g key={index} transform={`translate(0, ${yScale(item)})`}>
+                    <line
+                      x1="-3"
+                      y1="0"
+                      x2={contentW}
+                      y2="0"
+                      stroke={lineCol}
+                      strokeOpacity="40%"
+                    />
+                    <text
+                      x="-10"
+                      y="0"
+                      textAnchor="end"
+                      dominantBaseline="central"
+                    >
+                      {item}
+                    </text>
+                  </g>
+                );
+              })}
+            </g>
+
+            <g transform={`translate(0, ${contentH})`}>
+              <line x1="0" y1="0" x2={contentW} y2="0" stroke={lineCol}></line>
+              {xScale.ticks().map((item, index) => {
+                return (
+                  <g key={index} transform={`translate(${xScale(item)}, 0)`}>
+                    <line x1="0" y1="0" x2="0" y2="3" stroke={lineCol} />
+                    <text
+                      x="0"
+                      y="18"
+                      textAnchor="middle"
+                      dominantBaseline="top"
+                    >
+                      {item}
+                    </text>
+                  </g>
+                );
+              })}
+            </g>
+            <g>
+              <path
+                d={line(data)}
+                key={text}
+                fill="none"
+                stroke="black"
+                strokeWidth="2"
+              />
+            </g>
+          </g>
+        </svg>
+      </div>
+    );
+  }
 }
