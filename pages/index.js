@@ -15,11 +15,21 @@ export default function Home({
   console.log(_linksData);
   console.log(_keyList);
   console.log(_keyValues);
-  console.log(_leagueNames);
+  //console.log(_leagueNames);
   const attributes = _keyList;
-  const [value, setValue] = useState([0, 1]);
+  const [nodesData, setNodesData] = useState(_nodesData);
+  const [linksData, setLinksData] = useState(_linksData);
   const [attributesValue, setAttributesValue] = useState(_keyValues);
   const [currentMenu, setCurrentMenu] = useState(0);
+
+  useEffect(() => {
+    console.log(attributesValue);
+    setNodesData(
+      _nodesData.filter((e) => {
+        return attributesValue.every((f, i) => f[0] <= e.properties[attributes[i]] && e.properties[attributes[i]] <= f[1]);
+      })
+    )
+  }, [attributesValue])
 
   return (
     <NextUIProvider>
@@ -45,7 +55,7 @@ export default function Home({
           </Grid.Container>
         </Grid>
         <Grid xs={7} sm={9}>
-          <Chart />
+          <Chart nodesData={nodesData} linksData={linksData} />
         </Grid>
       </Grid.Container >
     </NextUIProvider >
@@ -63,8 +73,8 @@ export async function getStaticProps() {
       _nodesData[_nodesData.length] = {
         id: index,
         matchId: d.properties.matchId,
-        x: d.properties.x * 300,
-        y: d.properties.y * 300,
+        x: d.properties.x,
+        y: d.properties.y,
         properties: d.properties,
         flag: true,
       };
@@ -122,7 +132,7 @@ function MyIcon({ type, fill, filled }) {
 }
 
 function Attributes({ attributesValue, setAttributesValue, index }) {
-  console.log(attributesValue);
+  //console.log(attributesValue);
   const translate = ["戦闘時間", "初キル時間", "最大マルチキル数", "最大キルストリーク数", "勝率平均", "バイバック回数", "勝チームキル数", "負チームキル数"]
   return (
     <Grid xs={12} direction="column" alignItems="center">
@@ -149,10 +159,32 @@ function Attributes({ attributesValue, setAttributesValue, index }) {
   )
 }
 
-function Chart() {
+function Chart({ nodesData, linksData }) {
+  console.log(nodesData);
+  console.log(linksData);
+  const width = 1000;
+  const height = 1000;
+  const margin = 0;
+  const xScale = d3.scaleLinear().domain(d3.extent(nodesData.map(e => e.x))).range([margin, width - margin]).nice();
+  const yScale = d3.scaleLinear().domain(d3.extent(nodesData.map(e => e.y))).range([margin, height - margin]).nice();
   return (
-    <svg width={900} height={900} viewBox="0 0 400 400" style={{ backgroundColor: "#ddd" }}>
-      <circle cx={200} cy={200} r={100} />
+    <svg width={1000} height={1000} viewBox="0 0 1000 1000" style={{ backgroundColor: "#ddd" }}>
+      {nodesData.map((e) => {
+        return (
+          <g key={e.id}>
+            <circle cx={xScale(e.x)} cy={yScale(e.y)} r={3} style={{ transition: "cx 2s 0.1s, cy 2s 0.1s" }} />
+          </g>
+        )
+      })}
+      {linksData.map((e) => {
+        return (
+          <g key={e.id}>
+            {/*
+            <line x1={xScale(e.source.x)} y1={yScale(e.source.y)} x2={xScale(e.target.x)} y2={yScale(e.target.y)} stroke="red" strokeWidth={1} />
+        */}
+          </g>
+        )
+      })}
     </svg>
   )
 }
