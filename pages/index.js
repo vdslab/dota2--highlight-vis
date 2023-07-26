@@ -21,6 +21,7 @@ export default function Home({
   const [linksData, setLinksData] = useState(_linksData);
   const [attributesValue, setAttributesValue] = useState(_keyValues);
   const [currentMenu, setCurrentMenu] = useState(0);
+  const [clickedNode, setClickedNode] = useState(null);
 
   useEffect(() => {
     //console.log(attributesValue);
@@ -49,22 +50,20 @@ export default function Home({
             <MenuButton currentMenu={currentMenu} setCurrentMenu={setCurrentMenu} />
           </Grid.Container>
           <Grid.Container gap={2} wrap="wrap">
-            {currentMenu == 0 && attributes.map((e, i) => {
-              return (
-                <Attributes key={i} attributesValue={attributesValue} setAttributesValue={setAttributesValue} index={i} />
-              )
-            })}
-            {currentMenu == 1 &&
-              <Grid xs={12} direction="column" alignItems="center">
-                <svg viewBox="0 0 400 400" style={{ backgroundColor: "#ddd" }}>
-                  <circle cx={200} cy={200} r={100} />
-                </svg>
-              </Grid>
-            }
+            <Grid xs={12} direction="column" alignItems="center">
+              {currentMenu == 0 && attributes.map((e, i) => {
+                return (
+                  <Attributes key={i} attributesValue={attributesValue} setAttributesValue={setAttributesValue} index={i} />
+                )
+              })}
+              {currentMenu == 1 &&
+                <Detail clickedNode={clickedNode} setClickedNode={setClickedNode} />
+              }
+            </Grid>
           </Grid.Container>
         </Grid>
         <Grid xs={7} sm={9}>
-          <Chart nodesData={nodesData} linksData={linksData} />
+          <Chart nodesData={nodesData} linksData={linksData} clickedNode={clickedNode} setClickedNode={setClickedNode} />
         </Grid>
       </Grid.Container >
     </NextUIProvider >
@@ -144,7 +143,7 @@ function Attributes({ attributesValue, setAttributesValue, index }) {
   //console.log(attributesValue);
   const translate = ["戦闘時間", "初キル時間", "最大マルチキル数", "最大キルストリーク数", "勝率平均", "バイバック回数", "勝チームキル数", "負チームキル数"]
   return (
-    <Grid xs={12} direction="column" alignItems="center">
+    <div>
       <Grid.Container gap={1}>
         <Grid xs={4} direction="row" alignItems="center">
           <Text h6>{translate[index]}</Text>
@@ -164,33 +163,63 @@ function Attributes({ attributesValue, setAttributesValue, index }) {
           }}></Input>
         </Grid>
       </Grid.Container>
-    </Grid>
+    </div>
   )
 }
 
-function Chart({ nodesData, linksData }) {
+function Detail({ clickedNode, setClickedNode }) {
+  return (
+    <div>
+      <Button color="warning" onClick={() => { setClickedNode(null) }}>選択解除</Button>
+      <svg width={200} height={200} viewBox="0 0 400 400" style={{ backgroundColor: "#ddd" }}>
+        <circle cx={200} cy={200} r={100} />
+      </svg>
+    </div>
+  )
+}
+
+function Chart({ nodesData, linksData, clickedNode, setClickedNode }) {
   console.log(nodesData);
   console.log(linksData);
   const width = 1000;
   const height = 800;
   const margin = 0;
-  const xScale = d3.scaleLinear().domain(d3.extent(nodesData.map(e => e.x))).range([margin, width - margin]).nice();
-  const yScale = d3.scaleLinear().domain(d3.extent(nodesData.map(e => e.y))).range([margin, height - margin]).nice();
-  const col = { NONE: "white", COMEBACK: "red", STOMPED: "blue" }
-  const r = nodesData.length > 200 ? 3 : 6;
+  const zoomX = 1;
+  const zoomY = 1;
+  const xScale = clickedNode != null ?
+    d3.scaleLinear().domain([clickedNode.x - zoomX, clickedNode.x + zoomX]).range([margin, width - margin]).nice() :
+    d3.scaleLinear().domain(d3.extent(nodesData.map(e => e.x))).range([margin, width - margin]).nice();
+  const yScale = clickedNode != null ?
+    d3.scaleLinear().domain([clickedNode.y - zoomY, clickedNode.y + zoomY]).range([margin, height - margin]).nice() :
+    d3.scaleLinear().domain(d3.extent(nodesData.map(e => e.y))).range([margin, height - margin]).nice();
+  const col = { NONE: "#fff", COMEBACK: "#007bff", STOMPED: "#28a745" }
+  const r = nodesData.length < 200 || clickedNode != null ? 6 : 3;
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ backgroundColor: "#ddd" }}>
       {linksData.map((e) => {
+        const highlight = clickedNode != null && (e.source.id == clickedNode.id || e.target.id == clickedNode.id);
         return (
           <g key={e.id}>
-            <line x1={xScale(e.source.x)} y1={yScale(e.source.y)} x2={xScale(e.target.x)} y2={yScale(e.target.y)} stroke="black" strokeWidth={0.1} />
+            <line x1={xScale(e.source.x)} y1={yScale(e.source.y)} x2={xScale(e.target.x)} y2={yScale(e.target.y)} stroke={highlight ? "#ff69b4" : "#000"} strokeWidth={highlight ? 3 : 0.1}
+              onClick={() => {
+                if (highlight) {
+                  const nodeId = e.source.id == clickedNode.id ? e.target.id : e.source.id;
+                  setClickedNode(nodesData.find(f => f.id == nodeId));
+                }
+              }}
+            />
           </g>
         )
       })}
       {nodesData.map((e) => {
+        const highlight = clickedNode != null && e.id == clickedNode.id;
         return (
           <g key={e.id}>
-            <circle cx={xScale(e.x)} cy={yScale(e.y)} r={r} fill={col[e.properties.analysisOutcome]} style={{ transition: "cx 2s 0.1s, cy 2s 0.1s" }} />
+            <circle cx={xScale(e.x)} cy={yScale(e.y)} r={highlight ? r * 1.5 : r} fill={col[e.properties.analysisOutcome]} stroke={highlight ? "#ff69b4" : "none"}
+              style={{ transition: "cx 2s 0.1s, cy 2s 0.1s" }}
+              onClick={() => {
+                setClickedNode(e);
+              }} />
           </g>
         )
       })}
