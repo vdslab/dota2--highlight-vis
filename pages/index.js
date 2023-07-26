@@ -1,378 +1,87 @@
 import * as d3 from "d3";
-import { useEffect, useRef, useState } from "react";
-import { NewAppBar } from "./NewAppBar.js";
-import Drawer from "@mui/material/Drawer";
-import { FormControl, IconButton } from "@mui/material";
-import { styled, useTheme } from "@mui/material/styles";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import { useEffect, useRef, useState, useContext, createContext } from "react";
 import { request } from "./api";
+import { NextUIProvider, Button, Text, Input, Grid, Navbar } from '@nextui-org/react';
 
-export default function Home({ _nodesData, _linksData, _keyList, _keyValues }) {
-  const [nodesData, setNodesData] = useState(_nodesData);
-  const [linksData, setLinksData] = useState(_linksData);
-  const [isShowNodeData, setIsShowNodeData] = useState(false);
-  const [clickedId, setClickedId] = useState(null);
-  const [clickedMatchId, setClickedMathchId] = useState(null);
-  const [keysList, setKeysList] = useState(_keyList);
-  const [keyValues, setKeyValues] = useState(_keyValues);
-  const DrawerHeader = styled("div")(({ theme }) => ({
-    background: "#1976d2",
-    display: "left",
-    alignItems: "center",
-    padding: theme.spacing(0, 1),
-    ...theme.mixins.toolbar,
-    justifyContent: "flex-end",
-  }));
-  const theme = useTheme();
+export default function Home() {
+  const [currentMenu, setCurrentMenu] = useState(0);
+  const menu = ["フィルター", "詳細"];
+  const attributes = ["1", "2", "3", "4", "5", "6", "7", "8"]
 
-  const handleDrawerClose = () => {
-    setIsShowNodeData(false);
-  };
-  useEffect(() => {
-    for (let i = 0; i < nodesData.length; i++) {
-      let flag = true;
-      for (let j = 0; j < keyValues.length; j++) {
-        if (
-          keyValues[j][0] > nodesData[i]["properties"][keysList[j]] ||
-          keyValues[j][1] < nodesData[i]["properties"][keysList[j]]
-        ) {
-          flag = false;
-        }
-      }
-      setNodesData(
-        nodesData.map((node, index) => {
-          if (i == index) {
-            node["flag"] = flag;
-          }
-          return node;
-        })
-      );
-    }
-    setNodesData(nodesData.filter((v) => v));
-    console.log(nodesData);
-  }, [keyValues]);
-  const width = 1400;
-  const height = 1200;
-  const margin = 50;
-  function xyScale() {
-    const xScale = d3
-      .scaleLinear()
-      .domain([
-        Math.min(...nodesData.map((data) => data.x)),
-        Math.max(...nodesData.map((data) => data.x)),
-      ])
-      .range([margin, width - margin])
-      .nice();
-    const yScale = d3
-      .scaleLinear()
-      .domain([
-        Math.min(...nodesData.map((data) => data.y)),
-        Math.max(...nodesData.map((data) => data.y)),
-      ])
-      .range([margin, height - margin])
-      .nice();
-    return { xScale, yScale };
-  }
-  console.log(keyValues);
-  const { xScale, yScale } = xyScale();
-  return (
-    <div>
-      <NewAppBar
-        keysList={keysList}
-        keyValues={keyValues}
-        setKeyValues={setKeyValues}
-      />
-      <Drawer
-        sx={{
-          width: isShowNodeData,
-          flexShrink: 0,
-          "& .MuiDrawer-paper": {
-            width: isShowNodeData * width,
-            boxSizing: "border-box",
-          },
-        }}
-        variant="persistent"
-        anchor="right"
-        open={isShowNodeData}
-      >
-        <DrawerHeader>
-          <IconButton onClick={handleDrawerClose}>
-            {theme.direction === "ltr" ? (
-              <ChevronLeftIcon />
-            ) : (
-              <ChevronRightIcon />
-            )}
-          </IconButton>
-        </DrawerHeader>
-        <Subcontent id={clickedMatchId} />
-      </Drawer>
-      <ZoomableSVG width={width} height={height}>
-        {linksData.map((data, index) => {
-          const node1 = nodesData.find((x) => data.source == x.id);
-          const node2 = nodesData.find((x) => data.target == x.id);
-          if (node1.flag && node2.flag) {
-            if (node1.id == clickedId || node2.id == clickedId) {
-              return (
-                <g key={index}>
-                  <line
-                    x1={node1.x}
-                    x2={node2.x}
-                    y1={node1.y}
-                    y2={node2.y}
-                    stroke="red"
-                    strokeWidth="4"
-                  ></line>
-                </g>
-              );
-            } else {
-              return (
-                <g key={index}>
-                  <line
-                    x1={node1.x}
-                    x2={node2.x}
-                    y1={node1.y}
-                    y2={node2.y}
-                    stroke="black"
-                  ></line>
-                </g>
-              );
-            }
-          }
-        })}
-        {nodesData.map((data, index) => {
-          if (data.flag) {
-            return (
-              <g
-                key={data.id}
-                onClick={() => {
-                  setIsShowNodeData(true);
-                  setClickedId(data.id);
-                  setClickedMathchId(data.matchId);
-                }}
-              >
-                <circle
-                  fill="none"
-                  stroke="black"
-                  cx={data.x}
-                  cy={data.y}
-                  r={30}
-                ></circle>
-                <text
-                  textAnchor="middle"
-                  stroke="black"
-                  fill="Red"
-                  fontSize={"10px"}
-                  x={data.x}
-                  y={data.y}
-                >
-                  {data.id}
-                </text>
-              </g>
-            );
-          }
-        })}
-      </ZoomableSVG>
-    </div>
-  );
-}
-
-export async function getStaticProps() {
-  const fs = require("fs");
-  const newData = JSON.parse(fs.readFileSync("./public/out2.json"));
-  const _nodesData = [];
-  const _linksData = [];
-  let _keyList = null;
-  newData.map((d) => {
-    if (d.type == "node") {
-      if (!_keyList) {
-        _keyList = Object.keys(d.properties);
-        _keyList.splice(_keyList.indexOf("x"), 1);
-        _keyList.splice(_keyList.indexOf("y"), 1);
-        _keyList.splice(_keyList.indexOf("matchId"), 1);
-        _keyList.splice(_keyList.indexOf("analysisOutcome"), 1);
-      }
-      _nodesData[_nodesData.length] = {
-        id: d.id,
-        matchId: d.properties.matchId,
-        x: d.properties.x * 300,
-        y: d.properties.y * 300,
-        properties: d.properties,
-        flag: true,
-      };
-    } else if (d.type == "relationship") {
-      _linksData[_linksData.length] = {
-        id: d.id,
-        source: d.start.id,
-        target: d.end.id,
-      };
-    }
-  });
-  let _keyValues = new Array(_keyList.length);
-  for (let i = 0; i < _keyValues.length; i++) {
-    _keyValues[i] = 0;
-  }
-  for (let i = 0; i < _keyList.length; i++) {
-    _keyValues[i] = [
-      Math.min(..._nodesData.map((n) => n["properties"][_keyList[i]])),
-      Math.max(..._nodesData.map((n) => n["properties"][_keyList[i]])),
-    ];
-  }
-  return {
-    props: { _nodesData, _linksData, _keyList, _keyValues },
-  };
-}
-
-function ZoomableSVG({ children, width, height }) {
-  const svgRef = useRef();
-  const [k, setK] = useState(1);
-  const [x, setX] = useState(0);
-  const [y, setY] = useState(0);
-  useEffect(() => {
-    const zoom = d3.zoom().on("zoom", (event) => {
-      const { x, y, k } = event.transform;
-      setK(k);
-      setX(x);
-      setY(y);
-    });
-    d3.select(svgRef.current).call(zoom);
-  }, []);
-  return (
-    <svg ref={svgRef} viewBox="0 0 800 1200" style={{ cursor: "grab" }}>
-      <g transform={`translate(${x},${y})scale(${k})`}>{children}</g>
-    </svg>
-  );
-}
-
-function Subcontent({ id }) {
-  const [subData, setSubData] = useState(new Array(2));
-  const [keysList, setKeysList] = useState();
-  const [playersList, setPlayersList] = useState();
-  const x = 0;
-  useEffect(() => {
-    (async () => {
-      const rawDataArray = await request(id);
-      if ("errors" in rawDataArray) {
-        console.log("error");
-      } else {
-        const dataArray = rawDataArray.data.match.players;
-        const keyList = Object.keys(dataArray[0]["stats"]);
-        let players = new Array(10);
-        let rawSubData = new Array(keyList.length);
-        for (let i = 0; i < rawSubData.length; i++) {
-          rawSubData[i] = new Array(10);
-        }
-        for (let i = 0; i < keyList.length; i++) {
-          for (let j = 0; j < dataArray.length; j++) {
-            players[j] = dataArray[j]["hero"]["name"].substr(14);
-            rawSubData[i][j] = dataArray[j]["stats"][keyList[i]];
-          }
-        }
-        setSubData(rawSubData);
-        setKeysList(keyList);
-        setPlayersList(players);
-      }
-    })();
-  }, [id]);
-  if (subData) {
+  function Attributes({ text, index }) {
     return (
-      <div>
-        <h1 style={{ textAlign: "center" }}>{id}</h1>
-        {subData.map((data, index) => {
-          return <LineGraph text={keysList[index]} key={index} data={data} />;
-        })}
-      </div>
-    );
+      <Grid xs={12} direction="column" alignItems="center">
+        <Grid.Container gap={1}>
+          <Grid xs={4} direction="row" alignItems="center">
+            <Text h6>{text}</Text>
+          </Grid>
+          <Grid xs={4} direction="column" alignItems="center">
+            <Input label="最小値" type="number"></Input>
+          </Grid>
+          <Grid xs={4} direction="column" alignItems="center">
+            <Input label="最大値" type="number"></Input>
+          </Grid>
+        </Grid.Container>
+      </Grid>
+    )
   }
+
+  return (
+    <NextUIProvider>
+      <Text h1 style={{ textAlign: "center" }}>Dota2</Text>
+      <Grid.Container gap={2}>
+        <Grid xs={5} sm={3} direction="column" alignItems="center">
+          <Grid.Container gap={1}>
+            {
+              menu.map((e, i) => {
+                return (
+                  <Grid xs={6} direction="column" alignItems="stretch">
+                    <Button size={"xs"} color={i == currentMenu ? "primary" : ""} iconRight={<MyIcon type={e} fill="currentColor" filled />}
+                      onClick={(e) => { setCurrentMenu(i) }}>
+                      {e}
+                    </Button>
+                  </Grid>
+                )
+              })
+            }
+          </Grid.Container>
+          <Grid.Container gap={2} wrap="wrap">
+            {currentMenu == 0 && attributes.map((e, i) => {
+              return (
+                <Attributes text={e} index={i} />
+              )
+            })}
+            {currentMenu == 1 &&
+              <Grid xs={12} direction="column" alignItems="center">
+                <svg viewBox="0 0 400 400" style={{ backgroundColor: "#ddd" }}>
+                  <circle cx={200} cy={200} r={100} />
+                </svg>
+              </Grid>
+            }
+          </Grid.Container>
+        </Grid>
+        <Grid xs={7} sm={9}>
+          <svg width={900} height={900} viewBox="0 0 400 400" style={{ backgroundColor: "#ddd" }}>
+            <circle cx={200} cy={200} r={100} />
+          </svg>
+        </Grid>
+      </Grid.Container >
+    </NextUIProvider >
+  );
 }
 
-function LineGraph({ text, data }) {
-  const contentW = 800,
-    contentH = 400;
-  const margin = { top: 50, bottom: 100, left: 350, right: 100 };
-  const windowW = contentW + margin.left + margin.right;
-  const windowH = contentH + margin.top + margin.bottom;
-  const lineCol = "black";
-  const dataCol = "red";
-
-  const xScale = d3
-    .scaleLinear()
-    .domain([0, data[0].length - 1])
-    .range([0, contentW])
-    .nice();
-
-  const yScale = d3
-    .scaleLinear()
-    .domain(d3.extent(data[0]))
-    .range([contentH, 0])
-    .nice();
-
-  const line = d3
-    .line()
-    .x((d, i) => xScale(i))
-    .y((d) => yScale(d));
+function MyIcon({ type, fill, filled }) {
+  const Icon = () => {
+    switch (type) {
+      case "詳細":
+        return <path stroke={fill} d="M7.3304 2.0004H16.6694C20.0704 2.0004 21.9904 3.9294 22.0004 7.3304V16.6704C22.0004 20.0704 20.0704 22.0004 16.6694 22.0004H7.3304C3.9294 22.0004 2.0004 20.0704 2.0004 16.6704V7.3304C2.0004 3.9294 3.9294 2.0004 7.3304 2.0004ZM12.0494 17.8604C12.4804 17.8604 12.8394 17.5404 12.8794 17.1104V6.9204C12.9194 6.6104 12.7704 6.2994 12.5004 6.1304C12.2194 5.9604 11.8794 5.9604 11.6104 6.1304C11.3394 6.2994 11.1904 6.6104 11.2194 6.9204V17.1104C11.2704 17.5404 11.6294 17.8604 12.0494 17.8604ZM16.6504 17.8604C17.0704 17.8604 17.4294 17.5404 17.4804 17.1104V13.8304C17.5094 13.5094 17.3604 13.2104 17.0894 13.0404C16.8204 12.8704 16.4804 12.8704 16.2004 13.0404C15.9294 13.2104 15.7804 13.5094 15.8204 13.8304V17.1104C15.8604 17.5404 16.2194 17.8604 16.6504 17.8604ZM8.2194 17.1104C8.1794 17.5404 7.8204 17.8604 7.3894 17.8604C6.9594 17.8604 6.5994 17.5404 6.5604 17.1104V10.2004C6.5304 9.8894 6.6794 9.5804 6.9504 9.4104C7.2194 9.2404 7.5604 9.2404 7.8304 9.4104C8.0994 9.5804 8.2504 9.8894 8.2194 10.2004V17.1104Z" />
+      case "フィルター":
+        return <path stroke={fill} d="M4.12819 2H19.8718C21.0476 2 22 2.98105 22 4.19225V5.72376C22 6.31133 21.7704 6.87557 21.3627 7.28708L14.8577 13.867C14.7454 13.9816 14.5931 14.0452 14.4355 14.0441L8.98893 14.0272C8.82317 14.0272 8.66564 13.9561 8.55238 13.832L2.57452 7.25738C2.20489 6.85117 2 6.31451 2 5.7577V4.19332C2 2.98211 2.95238 2 4.12819 2ZM9.2801 15.8241L14.1347 15.839C14.4374 15.8401 14.6824 16.0935 14.6824 16.4043V19.1353C14.6824 19.4471 14.5053 19.7293 14.2294 19.8597L9.8227 21.9289C9.71974 21.9767 9.61061 22 9.50147 22C9.35629 22 9.21112 21.9576 9.08448 21.8738C8.86311 21.7274 8.72927 21.475 8.72927 21.2046V16.3894C8.72927 16.0766 8.97637 15.8231 9.2801 15.8241Z" />
+    }
+  }
   return (
-    <div>
-      <svg width={windowW} height={windowH}>
-        <text x={windowW / 2} y="30" stroke="lineCol" fontSize="20">
-          {text}
-        </text>
-        <g transform={`translate(${margin.left},${margin.top})`}>
-          <g>
-            <line x1="0" y1="0" x2="0" y2={contentH} stroke={lineCol}></line>
-            <text></text>
-            {yScale.ticks().map((item, index) => {
-              return (
-                <g key={index} transform={`translate(0, ${yScale(item)})`}>
-                  <line
-                    x1="-3"
-                    y1="0"
-                    x2={contentW}
-                    y2="0"
-                    stroke={lineCol}
-                    strokeOpacity="40%"
-                  />
-                  <text
-                    x="-10"
-                    y="0"
-                    textAnchor="end"
-                    dominantBaseline="central"
-                  >
-                    {item}
-                  </text>
-                </g>
-              );
-            })}
-          </g>
-
-          <g transform={`translate(0, ${contentH})`}>
-            <line x1="0" y1="0" x2={contentW} y2="0" stroke={lineCol}></line>
-            {xScale.ticks().map((item, index) => {
-              return (
-                <g key={index} transform={`translate(${xScale(item)}, 0)`}>
-                  <line x1="0" y1="0" x2="0" y2="3" stroke={lineCol} />
-                  <text x="0" y="18" textAnchor="middle" dominantBaseline="top">
-                    {item}
-                  </text>
-                </g>
-              );
-            })}
-          </g>
-          <g>
-            {data.map((d, index) => {
-              return (
-                <path
-                  d={line(d)}
-                  key={index}
-                  fill="none"
-                  stroke={dataCol}
-                  strokeWidth="2"
-                />
-              );
-            })}
-          </g>
-        </g>
-      </svg>
-    </div>
-  );
+    <svg width="24" height="24" viewBox="0 0 18 24" fill={filled ? fill : 'none'} xmlns="http://www.w3.org/2000/svg">
+      <Icon />
+    </svg>
+  )
 }
