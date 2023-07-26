@@ -8,6 +8,7 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { request } from "./api";
 import { Modal, Tooltip } from "@mui/material";
+import { Box } from "@mui/system";
 
 export default function Home({
   _nodesData,
@@ -62,7 +63,7 @@ export default function Home({
     setNodesData(nodesData.filter((v) => v));
   }, [keyValues]);
   const width = 1400;
-  const height = 1200;
+  const height = 980;
   const margin = 50;
   function xyScale() {
     const xScale = d3
@@ -94,8 +95,8 @@ export default function Home({
       <Drawer
         sx={{
           flexShrink: 0,
-          "& .MuiDrawer-paper": {
-            boxSizing: "border-box",
+          "@media screen and (min-width:600px)": {
+            width: ".8rem",
           },
         }}
         variant="temporary"
@@ -113,7 +114,7 @@ export default function Home({
         </DrawerHeader>
         <Subcontent node={clickedNode} />
       </Drawer>
-      <ZoomableSVG width={width} height={height}>
+      <ZoomableSVG width={2100} height={height}>
         {linksData.map((data, index) => {
           const node1 = nodesData.find((x) => data.source == x.id);
           const node2 = nodesData.find((x) => data.target == x.id);
@@ -166,13 +167,47 @@ export default function Home({
                   stroke="black"
                   cx={data.x}
                   cy={data.y}
-                  r={30}
+                  r={10}
                 ></circle>
               </g>
             );
           }
         })}
       </ZoomableSVG>
+      <Box
+        sx={{ display: "flex", border: "1px solid" }}
+        border={4}
+        borderColor="primary.main"
+      >
+        <svg width={width} height={1200 - height}>
+          {leagueNames.map((league, index) => {
+            return (
+              <g
+                key={league}
+                transform={`translate(${parseInt(index / 7) * 320},${
+                  ((index % 7) + 1) * 20
+                })`}
+              >
+                <rect
+                  x="0"
+                  y="0"
+                  width="20"
+                  height="20"
+                  fill={colorScale(index)}
+                ></rect>
+                <text
+                  alignmentBaseline="middle"
+                  textAnchor="MiddleLeft"
+                  x="20"
+                  y="10"
+                >
+                  {league}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </Box>
     </div>
   );
 }
@@ -254,7 +289,7 @@ function ZoomableSVG({ children, width, height }) {
     d3.select(svgRef.current).call(zoom);
   }, []);
   return (
-    <svg ref={svgRef} viewBox="0 0 800 1200" style={{ cursor: "grab" }}>
+    <svg ref={svgRef} width={width} height={height} style={{ cursor: "grab" }}>
       <g transform={`translate(${x},${y})scale(${k})`}>{children}</g>
     </svg>
   );
