@@ -11,11 +11,11 @@ export default function Home({
   _keyValues,
   _leagueNames,
 }) {
-  console.log(_nodesData);
-  console.log(_linksData);
-  console.log(_keyList);
-  console.log(_keyValues);
-  //console.log(_leagueNames);
+  // console.log(_nodesData);
+  // console.log(_linksData);
+  // console.log(_keyList);
+  // console.log(_keyValues);
+  // console.log(_leagueNames);
   const attributes = _keyList;
   const [nodesData, setNodesData] = useState(_nodesData);
   const [linksData, setLinksData] = useState(_linksData);
@@ -23,13 +23,22 @@ export default function Home({
   const [currentMenu, setCurrentMenu] = useState(0);
 
   useEffect(() => {
-    console.log(attributesValue);
+    //console.log(attributesValue);
     setNodesData(
       _nodesData.filter((e) => {
         return attributesValue.every((f, i) => f[0] <= e.properties[attributes[i]] && e.properties[attributes[i]] <= f[1]);
       })
     )
   }, [attributesValue])
+
+  useEffect(() => {
+    const ids = nodesData.map((e) => e.id);
+    setLinksData(
+      _linksData.filter((e) => {
+        return ids.includes(e.source.id) && ids.includes(e.target.id);
+      })
+    )
+  }, [nodesData])
 
   return (
     <NextUIProvider>
@@ -71,7 +80,7 @@ export async function getStaticProps() {
   newData.map((d, index) => {
     if (d.type == "node") {
       _nodesData[_nodesData.length] = {
-        id: index,
+        id: d.id,
         matchId: d.properties.matchId,
         x: d.properties.x,
         y: d.properties.y,
@@ -80,7 +89,7 @@ export async function getStaticProps() {
       };
     } else if (d.type == "relationship") {
       _linksData[_linksData.length] = {
-        id: index,
+        id: d.id,
         source: { id: d.start.id, x: d.start.properties.x, y: d.start.properties.y },
         target: { id: d.end.id, x: d.end.properties.x, y: d.end.properties.y },
       };
@@ -163,25 +172,25 @@ function Chart({ nodesData, linksData }) {
   console.log(nodesData);
   console.log(linksData);
   const width = 1000;
-  const height = 1000;
+  const height = 800;
   const margin = 0;
   const xScale = d3.scaleLinear().domain(d3.extent(nodesData.map(e => e.x))).range([margin, width - margin]).nice();
   const yScale = d3.scaleLinear().domain(d3.extent(nodesData.map(e => e.y))).range([margin, height - margin]).nice();
+  const col = { NONE: "white", COMEBACK: "red", STOMPED: "blue" }
+  const r = nodesData.length > 200 ? 3 : 6;
   return (
-    <svg width={1000} height={1000} viewBox="0 0 1000 1000" style={{ backgroundColor: "#ddd" }}>
-      {nodesData.map((e) => {
-        return (
-          <g key={e.id}>
-            <circle cx={xScale(e.x)} cy={yScale(e.y)} r={3} style={{ transition: "cx 2s 0.1s, cy 2s 0.1s" }} />
-          </g>
-        )
-      })}
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ backgroundColor: "#ddd" }}>
       {linksData.map((e) => {
         return (
           <g key={e.id}>
-            {/*
-            <line x1={xScale(e.source.x)} y1={yScale(e.source.y)} x2={xScale(e.target.x)} y2={yScale(e.target.y)} stroke="red" strokeWidth={1} />
-        */}
+            <line x1={xScale(e.source.x)} y1={yScale(e.source.y)} x2={xScale(e.target.x)} y2={yScale(e.target.y)} stroke="black" strokeWidth={0.1} />
+          </g>
+        )
+      })}
+      {nodesData.map((e) => {
+        return (
+          <g key={e.id}>
+            <circle cx={xScale(e.x)} cy={yScale(e.y)} r={r} fill={col[e.properties.analysisOutcome]} style={{ transition: "cx 2s 0.1s, cy 2s 0.1s" }} />
           </g>
         )
       })}
