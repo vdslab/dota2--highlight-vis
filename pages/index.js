@@ -1,30 +1,25 @@
 import * as d3 from "d3";
-import { useEffect, useRef, useState, useContext, createContext } from "react";
+import { useEffect, useRef, useState } from "react";
 import { request } from "./api";
-import { NextUIProvider, Button, Text, Input, Grid, Navbar } from '@nextui-org/react';
+import { NextUIProvider, Button, Text, Input, Grid } from '@nextui-org/react';
 
-export default function Home() {
+
+export default function Home({
+  _nodesData,
+  _linksData,
+  _keyList,
+  _keyValues,
+  _leagueNames,
+}) {
+  console.log(_nodesData);
+  console.log(_linksData);
+  console.log(_keyList);
+  console.log(_keyValues);
+  console.log(_leagueNames);
+  const attributes = _keyList;
+  const [value, setValue] = useState([0, 1]);
+  const [attributesValue, setAttributesValue] = useState(_keyValues);
   const [currentMenu, setCurrentMenu] = useState(0);
-  const menu = ["フィルター", "詳細"];
-  const attributes = ["1", "2", "3", "4", "5", "6", "7", "8"]
-
-  function Attributes({ text, index }) {
-    return (
-      <Grid xs={12} direction="column" alignItems="center">
-        <Grid.Container gap={1}>
-          <Grid xs={4} direction="row" alignItems="center">
-            <Text h6>{text}</Text>
-          </Grid>
-          <Grid xs={4} direction="column" alignItems="center">
-            <Input label="最小値" type="number"></Input>
-          </Grid>
-          <Grid xs={4} direction="column" alignItems="center">
-            <Input label="最大値" type="number"></Input>
-          </Grid>
-        </Grid.Container>
-      </Grid>
-    )
-  }
 
   return (
     <NextUIProvider>
@@ -32,23 +27,12 @@ export default function Home() {
       <Grid.Container gap={2}>
         <Grid xs={5} sm={3} direction="column" alignItems="center">
           <Grid.Container gap={1}>
-            {
-              menu.map((e, i) => {
-                return (
-                  <Grid xs={6} direction="column" alignItems="stretch">
-                    <Button size={"xs"} color={i == currentMenu ? "primary" : ""} iconRight={<MyIcon type={e} fill="currentColor" filled />}
-                      onClick={(e) => { setCurrentMenu(i) }}>
-                      {e}
-                    </Button>
-                  </Grid>
-                )
-              })
-            }
+            <MenuButton currentMenu={currentMenu} setCurrentMenu={setCurrentMenu} />
           </Grid.Container>
           <Grid.Container gap={2} wrap="wrap">
             {currentMenu == 0 && attributes.map((e, i) => {
               return (
-                <Attributes text={e} index={i} />
+                <Attributes key={i} attributesValue={attributesValue} setAttributesValue={setAttributesValue} index={i} />
               )
             })}
             {currentMenu == 1 &&
@@ -61,13 +45,64 @@ export default function Home() {
           </Grid.Container>
         </Grid>
         <Grid xs={7} sm={9}>
-          <svg width={900} height={900} viewBox="0 0 400 400" style={{ backgroundColor: "#ddd" }}>
-            <circle cx={200} cy={200} r={100} />
-          </svg>
+          <Chart />
         </Grid>
       </Grid.Container >
     </NextUIProvider >
   );
+}
+
+export async function getStaticProps() {
+  const fs = require("fs");
+  const newData = JSON.parse(fs.readFileSync("./public/out.json"));
+  const _nodesData = [];
+  const _linksData = [];
+  const _keyList = ["durationSeconds", "firstBloodTime", "maxMultKillsCount", "maxKillStreakCount", "winRates", "buyBackCount", "winTeamKills", "loseTeamKills"];
+  newData.map((d, index) => {
+    if (d.type == "node") {
+      _nodesData[_nodesData.length] = {
+        id: index,
+        matchId: d.properties.matchId,
+        x: d.properties.x * 300,
+        y: d.properties.y * 300,
+        properties: d.properties,
+        flag: true,
+      };
+    } else if (d.type == "relationship") {
+      _linksData[_linksData.length] = {
+        id: index,
+        source: { id: d.start.id, x: d.start.properties.x, y: d.start.properties.y },
+        target: { id: d.end.id, x: d.end.properties.x, y: d.end.properties.y },
+      };
+    }
+  });
+  const _keyValues = _keyList.map((e) => {
+    return (d3.extent(_nodesData.map((f) => f["properties"][e])))
+  })
+  const _leagueNames = [...new Set(_nodesData.map((e) => {
+    return (e.properties.leagueName);
+  }))];
+
+  return {
+    props: { _nodesData, _linksData, _keyList, _keyValues, _leagueNames },
+  };
+}
+
+
+function MenuButton({ currentMenu, setCurrentMenu }) {
+  const menu = ["フィルター", "詳細"];
+  return (
+    menu.map((e, i) => {
+      return (
+        <Grid key={i} xs={6} direction="column" alignItems="stretch">
+          <Button size={"xs"} color={i == currentMenu ? "primary" : ""} iconRight={<MyIcon type={e} fill="currentColor" filled />}
+            onClick={(e) => { setCurrentMenu(i) }}>
+            {e}
+          </Button>
+        </Grid>
+      )
+    })
+  )
 }
 
 function MyIcon({ type, fill, filled }) {
@@ -82,6 +117,42 @@ function MyIcon({ type, fill, filled }) {
   return (
     <svg width="24" height="24" viewBox="0 0 18 24" fill={filled ? fill : 'none'} xmlns="http://www.w3.org/2000/svg">
       <Icon />
+    </svg>
+  )
+}
+
+function Attributes({ attributesValue, setAttributesValue, index }) {
+  console.log(attributesValue);
+  const translate = ["戦闘時間", "初キル時間", "最大マルチキル数", "最大キルストリーク数", "勝率平均", "バイバック回数", "勝チームキル数", "負チームキル数"]
+  return (
+    <Grid xs={12} direction="column" alignItems="center">
+      <Grid.Container gap={1}>
+        <Grid xs={4} direction="row" alignItems="center">
+          <Text h6>{translate[index]}</Text>
+        </Grid>
+        <Grid xs={4} direction="column" alignItems="center">
+          <Input label="最小値" type="number" value={attributesValue[index][0]} onChange={(e) => {
+            setAttributesValue(attributesValue.map((f, i) => {
+              return (i == index) ? [e.target.value, f[1]] : f
+            }))
+          }}></Input>
+        </Grid>
+        <Grid xs={4} direction="column" alignItems="center">
+          <Input label="最大値" type="number" value={attributesValue[index][1]} onChange={(e) => {
+            setAttributesValue(attributesValue.map((f, i) => {
+              return (i == index) ? [f[0], e.target.value] : f
+            }))
+          }}></Input>
+        </Grid>
+      </Grid.Container>
+    </Grid>
+  )
+}
+
+function Chart() {
+  return (
+    <svg width={900} height={900} viewBox="0 0 400 400" style={{ backgroundColor: "#ddd" }}>
+      <circle cx={200} cy={200} r={100} />
     </svg>
   )
 }
