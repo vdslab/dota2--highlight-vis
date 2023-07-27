@@ -4,9 +4,9 @@ import { request } from "./api";
 import { NextUIProvider, Button, Text, Input, Grid, Card, Spacer, Link } from '@nextui-org/react';
 
 const translate = ["戦闘時間", "初キル時間", "最大マルチキル数", "最大キルストリーク数", "勝率平均", "バイバック回数", "勝チームキル数", "負チームキル数"]
+const attributes = ["durationSeconds", "firstBloodTime", "maxMultKillsCount", "maxKillStreakCount", "winRates", "buyBackCount", "winTeamKills", "loseTeamKills"];
 
-export default function Home({ _nodesData, _linksData, _keyList, _keyValues, }) {
-  const attributes = _keyList;
+export default function Home({ _nodesData, _linksData, _keyValues, }) {
   const [nodesData, setNodesData] = useState(_nodesData);
   const [linksData, setLinksData] = useState(_linksData);
   const [attributesValue, setAttributesValue] = useState(_keyValues);
@@ -85,7 +85,6 @@ export async function getStaticProps() {
   const newData = JSON.parse(fs.readFileSync("./public/out.json"));
   const _nodesData = [];
   const _linksData = [];
-  const _keyList = ["durationSeconds", "firstBloodTime", "maxMultKillsCount", "maxKillStreakCount", "winRates", "buyBackCount", "winTeamKills", "loseTeamKills"];
   newData.map((d, index) => {
     if (d.type == "node") {
       _nodesData[_nodesData.length] = {
@@ -102,11 +101,11 @@ export async function getStaticProps() {
       };
     }
   });
-  const _keyValues = _keyList.map((e) => {
+  const _keyValues = attributes.map((e) => {
     return (d3.extent(_nodesData.map((f) => f["properties"][e])))
   })
   return {
-    props: { _nodesData, _linksData, _keyList, _keyValues },
+    props: { _nodesData, _linksData, _keyValues },
   };
 }
 
@@ -214,8 +213,8 @@ function Chart({ nodesData, linksData, clickedNode, setClickedNode, clickedAtr }
   const width = 1000;
   const height = 800;
   const margin = 0;
-  const zoomX = 1;
-  const zoomY = 1;
+  const zoomX = 8 / 10;
+  const zoomY = 9 / 10;
   const xScale = clickedNode != null ?
     d3.scaleLinear().domain([clickedNode.x - zoomX, clickedNode.x + zoomX]).range([margin, width - margin]).nice() :
     d3.scaleLinear().domain(d3.extent(nodesData.map(e => e.x))).range([margin, width - margin]).nice();
