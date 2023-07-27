@@ -1,8 +1,9 @@
 import * as d3 from "d3";
 import { useEffect, useRef, useState } from "react";
 import { request } from "./api";
-import { NextUIProvider, Button, Text, Input, Grid } from '@nextui-org/react';
+import { NextUIProvider, Button, Text, Input, Grid, Card, Spacer } from '@nextui-org/react';
 
+const translate = ["戦闘時間", "初キル時間", "最大マルチキル数", "最大キルストリーク数", "勝率平均", "バイバック回数", "勝チームキル数", "負チームキル数"]
 
 export default function Home({
   _nodesData,
@@ -26,20 +27,25 @@ export default function Home({
 
   useEffect(() => {
     //console.log(attributesValue);
+    console.time('nodesData');
     setNodesData(
       _nodesData.filter((e) => {
-        return attributesValue.every((f, i) => f[0] <= e.properties[attributes[i]] && e.properties[attributes[i]] <= f[1]);
+        return attributesValue.every((f, i) => f[0] <= f[1] ? (f[0] <= e.properties[attributes[i]] && e.properties[attributes[i]] <= f[1]) : false);
       })
     )
+    console.timeEnd('nodesData');
+
   }, [attributesValue])
 
   useEffect(() => {
+    console.time('linksData');
     const ids = nodesData.map((e) => e.id);
     setLinksData(
       _linksData.filter((e) => {
         return ids.includes(e.source.id) && ids.includes(e.target.id);
       })
     )
+    console.timeEnd('linksData');
   }, [nodesData])
 
   return (
@@ -52,15 +58,23 @@ export default function Home({
           </Grid.Container>
           <Grid.Container gap={2} wrap="wrap">
             <Grid xs={12} direction="column" alignItems="center">
-              {currentMenu == 0 && attributes.map((e, i) => {
-                return (
-                  <Attributes key={i} index={i}
-                    attributesValue={attributesValue} setAttributesValue={setAttributesValue}
-                    clickedAtr={clickedAtr} setClickedAtr={setClickedAtr} />
-                )
-              })}
+              {currentMenu == 0 &&
+                <>
+                  <Button color="warning" onClick={() => { setAttributesValue(_keyValues) }}>入力リセット</Button>
+                  {
+                    attributes.map((e, i) => {
+                      return (
+                        <Attributes key={i} index={i}
+                          attributesValue={attributesValue} setAttributesValue={setAttributesValue}
+                          clickedAtr={clickedAtr} setClickedAtr={setClickedAtr} />
+                      )
+
+                    })
+                  }
+                </>
+              }
               {currentMenu == 1 &&
-                <Detail clickedNode={clickedNode} setClickedNode={setClickedNode} />
+                <Detail attributes={attributes} clickedNode={clickedNode} setClickedNode={setClickedNode} />
               }
             </Grid>
           </Grid.Container>
@@ -83,11 +97,9 @@ export async function getStaticProps() {
     if (d.type == "node") {
       _nodesData[_nodesData.length] = {
         id: d.id,
-        matchId: d.properties.matchId,
         x: d.properties.x,
         y: d.properties.y,
         properties: d.properties,
-        flag: true,
       };
     } else if (d.type == "relationship") {
       _linksData[_linksData.length] = {
@@ -144,7 +156,6 @@ function MyIcon({ type, fill, filled }) {
 
 function Attributes({ attributesValue, setAttributesValue, clickedAtr, setClickedAtr, index }) {
   //console.log(attributesValue);
-  const translate = ["戦闘時間", "初キル時間", "最大マルチキル数", "最大キルストリーク数", "勝率平均", "バイバック回数", "勝チームキル数", "負チームキル数"]
   const clicked = clickedAtr == index;
   return (
     <div>
@@ -172,13 +183,31 @@ function Attributes({ attributesValue, setAttributesValue, clickedAtr, setClicke
   )
 }
 
-function Detail({ clickedNode, setClickedNode }) {
+function Detail({ attributes, clickedNode, setClickedNode }) {
+  console.log(clickedNode);
   return (
     <div>
       <Button color="warning" onClick={() => { setClickedNode(null) }}>選択解除</Button>
-      <svg width={200} height={200} viewBox="0 0 400 400" style={{ backgroundColor: "#ddd" }}>
-        <circle cx={200} cy={200} r={100} />
-      </svg>
+      <Spacer y={1} />
+      {clickedNode != null &&
+        <>
+          {attributes.map((e, i) => {
+            return (
+              <>
+                <Card key={i}>
+                  <Card.Body>
+                    <Text>{translate[i]} : {clickedNode.properties[e]}</Text>
+                  </Card.Body>
+                </Card>
+                <Spacer y={0.5} />
+              </>
+            )
+          })}
+          <svg width={200} height={200} viewBox="0 0 400 400" style={{ backgroundColor: "#ddd" }}>
+            <circle cx={200} cy={200} r={100} />
+          </svg>
+        </>
+      }
     </div>
   )
 }
@@ -201,7 +230,6 @@ function Chart({ nodesData, linksData, clickedNode, setClickedNode, clickedAtr }
   const colorScale =
     d3.scaleLinear().domain(d3.extent(nodesData.map(e => e.properties[clickedAtr]))).range(['white', 'red']).nice();
   const col = { NONE: "#fff", COMEBACK: "#007bff", STOMPED: "#28a745" }
-
   const r = nodesData.length < 200 || clickedNode != null ? 6 : 3;
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ backgroundColor: "#ddd" }}>
@@ -210,6 +238,7 @@ function Chart({ nodesData, linksData, clickedNode, setClickedNode, clickedAtr }
         return (
           <g key={e.id}>
             <line x1={xScale(e.source.x)} y1={yScale(e.source.y)} x2={xScale(e.target.x)} y2={yScale(e.target.y)} stroke={highlight ? "#ff69b4" : "#000"} strokeWidth={highlight ? 3 : 0.1}
+              style={highlight ? { cursor: "pointer" } : {}}
               onClick={() => {
                 if (highlight) {
                   const nodeId = e.source.id == clickedNode.id ? e.target.id : e.source.id;
@@ -230,7 +259,7 @@ function Chart({ nodesData, linksData, clickedNode, setClickedNode, clickedAtr }
                   col[e.properties.analysisOutcome] :
                   colorScale(e.properties[clickedAtr])
               }
-              style={{ transition: "cx 2s 0.1s, cy 2s 0.1s" }}
+              style={{ transition: "cx 1s 0s, cy 1s 0s", cursor: "pointer" }}
               onClick={() => {
                 setClickedNode(e);
               }} />
