@@ -43,12 +43,11 @@ export async function youtubeRequest(findText) {
     maxResults: 3
   });
   const url = `https://www.googleapis.com/youtube/v3/search?${params}`;
-  try {
-    const response = await fetch(url);
+  const response = await fetch(url);
+  console.log(response);
+  if (response.status == 200) {
     const result = await response.json();
     return result;
-  } catch (error) {
-    console.error("APIリクエストエラー:", error);
-    return null;
   }
+  return null;
 }
