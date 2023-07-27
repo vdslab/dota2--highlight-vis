@@ -46,7 +46,7 @@ export default function Home({ _nodesData, _linksData, _keyList, _keyValues, }) 
     <NextUIProvider>
       <Text h1 style={{ textAlign: "center" }}>Dota2</Text>
       <Grid.Container gap={2}>
-        <Grid xs={5} sm={3} direction="column" alignItems="center">
+        <Grid xs={"auto"} sm={4} direction="column" alignItems="center">
           <Grid.Container gap={1}>
             <MenuButton currentMenu={currentMenu} setCurrentMenu={setCurrentMenu} />
           </Grid.Container>
@@ -72,7 +72,7 @@ export default function Home({ _nodesData, _linksData, _keyList, _keyValues, }) 
             </Grid>
           </Grid.Container>
         </Grid>
-        <Grid xs={7} sm={9}>
+        <Grid xs={"auto"} direction="column" alignItems="center">
           <Chart nodesData={nodesData} linksData={linksData} clickedNode={clickedNode} setClickedNode={setClickedNode} clickedAtr={clickedAtr != null ? attributes[clickedAtr] : null} />
         </Grid>
       </Grid.Container >
@@ -181,7 +181,7 @@ function Detail({ attributes, clickedNode, setClickedNode }) {
         <>
           {attributes.map((e, i) => {
             return (
-              <DetailCard label={translate[i]} value={clickedNode.properties[e]} />
+              <DetailCard key={i} label={translate[i]} value={clickedNode.properties[e]} />
             )
           })}
           <Card>
@@ -227,7 +227,7 @@ function Chart({ nodesData, linksData, clickedNode, setClickedNode, clickedAtr }
   const col = { NONE: "#fff", COMEBACK: "#007bff", STOMPED: "#28a745" }
   const r = nodesData.length < 200 || clickedNode != null ? 6 : 3;
   return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ backgroundColor: "#ddd" }}>
+    <svg viewBox={`0 0 ${width} ${height}`} style={{ backgroundColor: "#ddd" }}>
       {linksData.map((e) => {
         const highlight = clickedNode != null && (e.source.id == clickedNode.id || e.target.id == clickedNode.id);
         return (
