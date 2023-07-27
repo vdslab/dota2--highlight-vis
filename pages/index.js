@@ -244,7 +244,7 @@ function Chart({ nodesData, linksData, clickedNode, setClickedNode, clickedAtr }
     d3.scaleLinear().domain([clickedNode.y - zoomY, clickedNode.y + zoomY]).range([margin, height - margin]).nice() :
     d3.scaleLinear().domain(d3.extent(nodesData.map(e => e.y))).range([margin, height - margin]).nice();
   const colorScale =
-    d3.scaleLinear().domain(d3.extent(nodesData.map(e => e.properties[clickedAtr]))).range(['white', 'red']).nice();
+    d3.scaleLinear().domain(d3.extent(nodesData.map(e => e.properties[clickedAtr]))).range(['white', '#28a745']).nice();
   const col = { NONE: "#fff", COMEBACK: "#007bff", STOMPED: "#28a745" }
   const r = nodesData.length < 200 || clickedNode != null ? 6 : 3;
   return (
