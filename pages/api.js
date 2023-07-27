@@ -15,11 +15,11 @@ export async function matchRequest(id) {
         }
         radiantTeam{
           name
-          logo
+          id
         }
         direTeam{
           name
-          logo
+          id
         }
         didRadiantWin
         winRates

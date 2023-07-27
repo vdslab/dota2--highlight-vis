@@ -400,8 +400,8 @@ function DrawTitle({ data, radiantPlayer, direPlayer, width }) {
         <tspan x={width / 2} dy={0} fontSize={28} alignmentBaseline="text-before-edge" > VS </tspan>
         <tspan x={width - w - 50 - 20} dy={0} fontSize={28} alignmentBaseline="text-before-edge" style={{ textAnchor: "end" }}>{data.direTeam.name}</tspan>
       </text>
-      <image x={50} y={35} width={w} height={h} href={data.radiantTeam.logo} />
-      <image x={width - w - 50} y={35} width={w} height={h} href={data.direTeam.logo} />
+      <image x={50} y={35} width={w} height={h} href={`https://cdn.stratz.com/images/dota2/teams/${data.radiantTeam.id}.png`} />
+      <image x={width - w - 50} y={35} width={w} height={h} href={`https://cdn.stratz.com/images/dota2/teams/${data.direTeam.id}.png`} />
       {
         radiantPlayer.map((e, i) => {
           return (
