@@ -1,8 +1,7 @@
 import * as d3 from "d3";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { matchRequest, youtubeRequest } from "./api";
 import { NextUIProvider, Button, Text, Input, Grid, Card, Spacer, Link } from '@nextui-org/react';
-import { match } from "assert";
 
 const translate = ["戦闘時間", "初キル時間", "最大マルチキル数", "最大キルストリーク数", "勝率平均", "バイバック回数", "勝チームキル数", "負チームキル数"]
 const attributesStep = [100, 100, 1, 1, 1, 1, 1, 1];
@@ -191,7 +190,7 @@ function Attributes({ attributesValue, setAttributesValue, clickedAtr, setClicke
 }
 
 function Detail({ attributes, clickedNode, setClickedNode, youtubeLinks }) {
-  console.log(clickedNode);
+  //console.log(clickedNode);
   return (
     <>
       <Button color="warning" onPress={() => { setClickedNode(null) }}>選択解除</Button>
@@ -315,7 +314,9 @@ function LineChart({ matchData }) {
     )
   }
   const data = matchData.data.match;
-  console.log(data);
+  const radiantPlayer = data.players.filter(e => e.isRadiant);
+  const direPlayer = data.players.filter(e => !e.isRadiant);
+  //console.log(data);
   const xScale = d3.scaleLinear().domain([0, data.winRates.length]).range([margin, width - margin]);
   const yScaleW = d3.scaleLinear().domain([1, 0]).range(yRange);
   const radiantNetworthLeadsMax = d3.extent(data.radiantNetworthLeads).reduce((e, v) => {
@@ -330,7 +331,7 @@ function LineChart({ matchData }) {
   const yScaleE = d3.scaleLinear().domain([radiantExperienceLeadsMax, 0, -radiantExperienceLeadsMax]).range(yRange2);
   return (
     <svg viewBox={`0 0 ${width} ${height}`} style={{ backgroundColor: "#ddd" }}>
-      <DrawTitle data={data} width={width} />
+      <DrawTitle data={data} radiantPlayer={radiantPlayer} direPlayer={direPlayer} width={width} />
       {
         <g>
           {data.radiantExperienceLeads.map((e, i) => {
@@ -353,18 +354,44 @@ function LineChart({ matchData }) {
           <DrawLine data={data.radiantExperienceLeads} xScale={xScale} yScale={yScaleE} fill={blue} />
         </g>
       }
+      {
+        radiantPlayer.map((e, i) => {
+          const s = e.playbackData.streakEvents.filter(f => f.type == 'MULTI_KILL');
+          return (
+            s.map((f, i) => {
+              const size = f.value * 10;
+              return (
+                <image key={i} x={xScale(f.time / 60) - (size / 2)} y={yRange[0] + ((f.value - 2) * size / 2)} width={size} height={size}
+                  href={`https://cdn.stratz.com/images/dota2/heroes/${e.hero.shortName}_icon.png`}
+                  opacity={0.8} />
+              )
+            })
+          )
+        })
+      }
+      {
+        direPlayer.map((e, i) => {
+          const s = e.playbackData.streakEvents.filter(f => f.type == 'MULTI_KILL');
+          return (
+            s.map((f, i) => {
+              const size = f.value * 10;
+              return (
+                <image key={i} x={xScale(f.time / 60) - (size / 2)} y={yRange[1] - ((f.value - 2) * size / 2) - size} width={size} height={size}
+                  href={`https://cdn.stratz.com/images/dota2/heroes/${e.hero.shortName}_icon.png`}
+                  opacity={0.8} />
+              )
+            })
+          )
+        })
+      }
     </svg>
   )
 }
 
-function DrawTitle({ data, width }) {
+function DrawTitle({ data, radiantPlayer, direPlayer, width }) {
   const t = 30;
   const w = 5 * t;
   const h = 3 * t;
-  const radiantPlayer = data.players.filter(e => e.isRadiant);
-  const direPlayer = data.players.filter(e => !e.isRadiant);
-  console.log(radiantPlayer);
-  console.log(direPlayer);
   return (
     <g>
       <text x={width / 2} y={0} style={{ textAnchor: "middle" }}>

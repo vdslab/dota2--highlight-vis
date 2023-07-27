@@ -4,6 +4,7 @@ export async function matchRequest(id) {
   const query = `
     {
       match(id:${id}){
+        id
         league{
           displayName
         }
@@ -67,7 +68,6 @@ export async function youtubeRequest(findText) {
   });
   const url = `https://www.googleapis.com/youtube/v3/search?${params}`;
   const response = await fetch(url);
-  console.log(response);
   if (response.status == 200) {
     const result = await response.json();
     return result;
