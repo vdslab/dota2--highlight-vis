@@ -4,6 +4,7 @@ import { request, youtubeRequest } from "./api";
 import { NextUIProvider, Button, Text, Input, Grid, Card, Spacer, Link } from '@nextui-org/react';
 
 const translate = ["戦闘時間", "初キル時間", "最大マルチキル数", "最大キルストリーク数", "勝率平均", "バイバック回数", "勝チームキル数", "負チームキル数"]
+const attributesStep = [100, 100, 1, 1, 1, 1, 1, 1];
 const attributes = ["durationSeconds", "firstBloodTime", "maxMultKillsCount", "maxKillStreakCount", "winRates", "buyBackCount", "winTeamKills", "loseTeamKills"];
 
 export default function Home({ _nodesData, _linksData, _keyValues, }) {
@@ -91,6 +92,7 @@ export async function getStaticProps() {
   const _linksData = [];
   newData.map((d, index) => {
     if (d.type == "node") {
+      d.properties.winRates = d.properties.winRates * 100;
       _nodesData[_nodesData.length] = {
         id: d.id,
         x: d.properties.x,
@@ -108,8 +110,6 @@ export async function getStaticProps() {
   const _keyValues = attributes.map((e) => {
     return (d3.extent(_nodesData.map((f) => f["properties"][e])))
   })
-  const leagueName = [...new Set(_nodesData.map(e => e.properties.leagueName))];
-  console.log(leagueName);
   return {
     props: { _nodesData, _linksData, _keyValues },
   };
@@ -158,14 +158,14 @@ function Attributes({ attributesValue, setAttributesValue, clickedAtr, setClicke
             onClick={() => { setClickedAtr(clicked ? null : index) }}>{translate[index]}</Text>
         </Grid>
         <Grid xs={4} direction="column" alignItems="center">
-          <Input label="最小値" type="number" value={attributesValue[index][0]} onChange={(e) => {
+          <Input label="最小値" type="number" value={attributesValue[index][0]} step={attributesStep[index]} onChange={(e) => {
             setAttributesValue(attributesValue.map((f, i) => {
               return (i == index) ? [e.target.value, f[1]] : f
             }))
           }}></Input>
         </Grid>
         <Grid xs={4} direction="column" alignItems="center">
-          <Input label="最大値" type="number" value={attributesValue[index][1]} onChange={(e) => {
+          <Input label="最大値" type="number" value={attributesValue[index][1]} step={attributesStep[index]} onChange={(e) => {
             setAttributesValue(attributesValue.map((f, i) => {
               return (i == index) ? [f[0], e.target.value] : f
             }))
