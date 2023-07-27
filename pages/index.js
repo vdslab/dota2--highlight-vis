@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 import { useEffect, useRef, useState } from "react";
 import { request } from "./api";
-import { NextUIProvider, Button, Text, Input, Grid, Card, Spacer } from '@nextui-org/react';
+import { NextUIProvider, Button, Text, Input, Grid, Card, Spacer, Link } from '@nextui-org/react';
 
 const translate = ["戦闘時間", "初キル時間", "最大マルチキル数", "最大キルストリーク数", "勝率平均", "バイバック回数", "勝チームキル数", "負チームキル数"]
 
@@ -48,6 +48,12 @@ export default function Home({
     console.timeEnd('linksData');
   }, [nodesData])
 
+  useEffect(() => {
+    if (clickedNode != null) {
+      setCurrentMenu(1);
+    }
+  }, [clickedNode])
+
   return (
     <NextUIProvider>
       <Text h1 style={{ textAlign: "center" }}>Dota2</Text>
@@ -60,7 +66,7 @@ export default function Home({
             <Grid xs={12} direction="column" alignItems="center">
               {currentMenu == 0 &&
                 <>
-                  <Button color="warning" onClick={() => { setAttributesValue(_keyValues) }}>入力リセット</Button>
+                  <Button color="warning" onPress={() => { setAttributesValue(_keyValues) }}>入力リセット</Button>
                   {
                     attributes.map((e, i) => {
                       return (
@@ -129,7 +135,7 @@ function MenuButton({ currentMenu, setCurrentMenu }) {
       return (
         <Grid key={i} xs={6} direction="column" alignItems="stretch">
           <Button size={"xs"} color={i == currentMenu ? "primary" : ""} iconRight={<MyIcon type={e} fill="currentColor" filled />}
-            onClick={(e) => { setCurrentMenu(i) }}>
+            onPress={(e) => { setCurrentMenu(i) }}>
             {e}
           </Button>
         </Grid>
@@ -187,28 +193,38 @@ function Detail({ attributes, clickedNode, setClickedNode }) {
   console.log(clickedNode);
   return (
     <div>
-      <Button color="warning" onClick={() => { setClickedNode(null) }}>選択解除</Button>
+      <Button color="warning" onPress={() => { setClickedNode(null) }}>選択解除</Button>
       <Spacer y={1} />
       {clickedNode != null &&
         <>
           {attributes.map((e, i) => {
             return (
-              <>
-                <Card key={i}>
-                  <Card.Body>
-                    <Text>{translate[i]} : {clickedNode.properties[e]}</Text>
-                  </Card.Body>
-                </Card>
-                <Spacer y={0.5} />
-              </>
+              <DetailCard label={translate[i]} value={clickedNode.properties[e]} />
             )
           })}
-          <svg width={200} height={200} viewBox="0 0 400 400" style={{ backgroundColor: "#ddd" }}>
-            <circle cx={200} cy={200} r={100} />
-          </svg>
+          <Card>
+            <Card.Body>
+              <Link href={`https://stratz.com/matches/${clickedNode.properties.matchId}`} target="_blank" underline isExternal>
+                STRATZで見る
+              </Link>
+            </Card.Body>
+          </Card>
         </>
       }
     </div>
+  )
+}
+
+function DetailCard({ label, value }) {
+  return (
+    <>
+      <Card key={label}>
+        <Card.Body>
+          <Text>{label} : {value}</Text>
+        </Card.Body>
+      </Card>
+      <Spacer y={0.5} />
+    </>
   )
 }
 
@@ -259,7 +275,7 @@ function Chart({ nodesData, linksData, clickedNode, setClickedNode, clickedAtr }
                   col[e.properties.analysisOutcome] :
                   colorScale(e.properties[clickedAtr])
               }
-              style={{ transition: "cx 1s 0s, cy 1s 0s", cursor: "pointer" }}
+              style={{ transition: "all 1s 0s", cursor: "pointer" }}
               onClick={() => {
                 setClickedNode(e);
               }} />
