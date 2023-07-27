@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 import { useEffect, useRef, useState } from "react";
-import { request } from "./api";
+import { request, youtubeRequest } from "./api";
 import { NextUIProvider, Button, Text, Input, Grid, Card, Spacer, Link } from '@nextui-org/react';
 
 const translate = ["戦闘時間", "初キル時間", "最大マルチキル数", "最大キルストリーク数", "勝率平均", "バイバック回数", "勝チームキル数", "負チームキル数"]
@@ -13,6 +13,7 @@ export default function Home({ _nodesData, _linksData, _keyValues, }) {
   const [currentMenu, setCurrentMenu] = useState(0);
   const [clickedNode, setClickedNode] = useState(null);
   const [clickedAtr, setClickedAtr] = useState(null);
+  const [youtubeLinks, setYoutubeLinks] = useState(null);
 
   useEffect(() => {
     console.time('nodesData');
@@ -39,6 +40,9 @@ export default function Home({ _nodesData, _linksData, _keyValues, }) {
   useEffect(() => {
     if (clickedNode != null) {
       setCurrentMenu(1);
+      const findText = `${clickedNode.properties.winTeamName} VS ${clickedNode.properties.loseTeamName} ${clickedNode.properties.leagueName}`;
+      console.log(findText);
+      youtubeRequest(findText).then(r => setYoutubeLinks(r));
     }
   }, [clickedNode])
 
@@ -67,7 +71,7 @@ export default function Home({ _nodesData, _linksData, _keyValues, }) {
                 </>
               }
               {currentMenu == 1 &&
-                <Detail attributes={attributes} clickedNode={clickedNode} setClickedNode={setClickedNode} />
+                <Detail attributes={attributes} clickedNode={clickedNode} setClickedNode={setClickedNode} youtubeLinks={youtubeLinks} />
               }
             </Grid>
           </Grid.Container>
@@ -104,6 +108,8 @@ export async function getStaticProps() {
   const _keyValues = attributes.map((e) => {
     return (d3.extent(_nodesData.map((f) => f["properties"][e])))
   })
+  const leagueName = [...new Set(_nodesData.map(e => e.properties.leagueName))];
+  console.log(leagueName);
   return {
     props: { _nodesData, _linksData, _keyValues },
   };
@@ -170,7 +176,7 @@ function Attributes({ attributesValue, setAttributesValue, clickedAtr, setClicke
   )
 }
 
-function Detail({ attributes, clickedNode, setClickedNode }) {
+function Detail({ attributes, clickedNode, setClickedNode, youtubeLinks }) {
   console.log(clickedNode);
   return (
     <div>
@@ -190,6 +196,22 @@ function Detail({ attributes, clickedNode, setClickedNode }) {
               </Link>
             </Card.Body>
           </Card>
+          <Spacer y={0.5} />
+          {youtubeLinks != null && youtubeLinks.items.map((e, i) => {
+            console.log(e);
+            return (
+              <div key={i}>
+                <Card>
+                  <Card.Body>
+                    <Link href={`https://www.youtube.com/watch?v=${e.id.videoId}`} target="_blank" underline isExternal>
+                      {e.snippet.title}
+                    </Link>
+                  </Card.Body>
+                </Card>
+                <Spacer y={0.5} />
+              </div>
+            )
+          })}
         </>
       }
     </div>

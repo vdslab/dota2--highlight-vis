@@ -33,3 +33,22 @@ export async function request(id) {
   const responseData = await response.json();
   return responseData;
 }
+
+export async function youtubeRequest(findText) {
+  const params = new URLSearchParams({
+    key: "AIzaSyBDqOadbmZbbHJ42OMv7wNmKsXT9uAE9AQ",
+    q: findText,
+    part: "snippet",
+    type: "video",
+    maxResults: 3
+  });
+  const url = `https://www.googleapis.com/youtube/v3/search?${params}`;
+  try {
+    const response = await fetch(url);
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("APIリクエストエラー:", error);
+    return null;
+  }
+}
