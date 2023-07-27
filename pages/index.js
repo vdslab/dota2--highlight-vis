@@ -179,7 +179,7 @@ function Attributes({ attributesValue, setAttributesValue, clickedAtr, setClicke
 function Detail({ attributes, clickedNode, setClickedNode, youtubeLinks }) {
   console.log(clickedNode);
   return (
-    <div>
+    <>
       <Button color="warning" onPress={() => { setClickedNode(null) }}>選択解除</Button>
       <Spacer y={1} />
       {clickedNode != null &&
@@ -214,7 +214,7 @@ function Detail({ attributes, clickedNode, setClickedNode, youtubeLinks }) {
           })}
         </>
       }
-    </div>
+    </>
   )
 }
 
