@@ -1,25 +1,46 @@
-export async function request(id) {
+export async function matchRequest(id) {
   const access_token =
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJodHRwczovL3N0ZWFtY29tbXVuaXR5LmNvbS9vcGVuaWQvaWQvNzY1NjExOTgwNDA5NzYzMTYiLCJ1bmlxdWVfbmFtZSI6IkJsdWVrb29wYSIsIlN1YmplY3QiOiI5YmFlYzA5YS0wNTk4LTQyOWItOWI2ZS1kNTBkMjE0ZDllNTQiLCJTdGVhbUlkIjoiODA3MTA1ODgiLCJuYmYiOjE2NjAxOTA0MTcsImV4cCI6MTY5MTcyNjQxNywiaWF0IjoxNjYwMTkwNDE3LCJpc3MiOiJodHRwczovL2FwaS5zdHJhdHouY29tIn0.24rFe6QiDLahL6qP-uZvXUs-OEE2GbooWFJXZyOXRCE";
-  const query =
-    `
+  const query = `
     {
-      match(id:` +
-    id +
-    `) {
-        winRates
-        players{
-          hero{
-            name
+      match(id:${id}){
+        league{
+          displayName
+        }
+        series{
+          matches{
+            id
           }
-          stats{
-            experiencePerMinute
-            goldPerMinute
+        }
+        radiantTeam{
+          name
+          logo
+        }
+        direTeam{
+          name
+          logo
+        }
+        didRadiantWin
+        winRates
+        radiantNetworthLeads
+        radiantExperienceLeads
+        players{
+          isRadiant
+          hero{
+            displayName
+            shortName
+          }
+          playbackData{
+            streakEvents{
+              time
+              heroId
+              type
+              value
+            }
           }
         }
       }
-    }
-    `;
+    }`;
 
   const response = await fetch("https://api.stratz.com/graphql", {
     method: "POST",
@@ -29,9 +50,11 @@ export async function request(id) {
     },
     body: JSON.stringify({ query }),
   });
-
-  const responseData = await response.json();
-  return responseData;
+  if (response.status == 200) {
+    const result = await response.json();
+    return result;
+  }
+  return null;
 }
 
 export async function youtubeRequest(findText) {

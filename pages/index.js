@@ -1,11 +1,15 @@
 import * as d3 from "d3";
 import { useEffect, useRef, useState } from "react";
-import { request, youtubeRequest } from "./api";
+import { matchRequest, youtubeRequest } from "./api";
 import { NextUIProvider, Button, Text, Input, Grid, Card, Spacer, Link } from '@nextui-org/react';
+import { match } from "assert";
 
 const translate = ["戦闘時間", "初キル時間", "最大マルチキル数", "最大キルストリーク数", "勝率平均", "バイバック回数", "勝チームキル数", "負チームキル数"]
 const attributesStep = [100, 100, 1, 1, 1, 1, 1, 1];
 const attributes = ["durationSeconds", "firstBloodTime", "maxMultKillsCount", "maxKillStreakCount", "winRates", "buyBackCount", "winTeamKills", "loseTeamKills"];
+const green = "#28a745";
+const blue = "#007bff";
+const pink = "#ff69b4";
 
 export default function Home({ _nodesData, _linksData, _keyValues, }) {
   const [nodesData, setNodesData] = useState(_nodesData);
@@ -15,6 +19,7 @@ export default function Home({ _nodesData, _linksData, _keyValues, }) {
   const [clickedNode, setClickedNode] = useState(null);
   const [clickedAtr, setClickedAtr] = useState(null);
   const [youtubeLinks, setYoutubeLinks] = useState(null);
+  const [matchData, setMatchData] = useState(null);
 
   useEffect(() => {
     console.time('nodesData');
@@ -30,11 +35,15 @@ export default function Home({ _nodesData, _linksData, _keyValues, }) {
   useEffect(() => {
     console.time('linksData');
     const ids = nodesData.map((e) => e.id);
-    setLinksData(
-      _linksData.filter((e) => {
-        return ids.includes(e.source.id) && ids.includes(e.target.id);
-      })
-    )
+    if (ids.length != 0) {
+      setLinksData(
+        _linksData.filter((e) => {
+          return ids.includes(e.source.id) && ids.includes(e.target.id);
+        })
+      )
+    } else {
+      setLinksData([]);
+    }
     console.timeEnd('linksData');
   }, [nodesData])
 
@@ -44,6 +53,9 @@ export default function Home({ _nodesData, _linksData, _keyValues, }) {
       const findText = `${clickedNode.properties.winTeamName} VS ${clickedNode.properties.loseTeamName} ${clickedNode.properties.leagueName}`;
       console.log(findText);
       youtubeRequest(findText).then(r => setYoutubeLinks(r));
+      matchRequest(clickedNode.properties.matchId).then(r => setMatchData(r));
+    } else {
+      setMatchData(null);
     }
   }, [clickedNode])
 
@@ -78,7 +90,9 @@ export default function Home({ _nodesData, _linksData, _keyValues, }) {
           </Grid.Container>
         </Grid>
         <Grid xs={"auto"} direction="column" alignItems="center">
-          <Chart nodesData={nodesData} linksData={linksData} clickedNode={clickedNode} setClickedNode={setClickedNode} clickedAtr={clickedAtr != null ? attributes[clickedAtr] : null} />
+          <NetworkChart nodesData={nodesData} linksData={linksData} clickedNode={clickedNode} setClickedNode={setClickedNode} clickedAtr={clickedAtr != null ? attributes[clickedAtr] : null} />
+          <Spacer y={2} />
+          <LineChart matchData={matchData} />
         </Grid>
       </Grid.Container >
     </NextUIProvider >
@@ -231,12 +245,14 @@ function DetailCard({ label, value }) {
   )
 }
 
-function Chart({ nodesData, linksData, clickedNode, setClickedNode, clickedAtr }) {
+function NetworkChart({ nodesData, linksData, clickedNode, setClickedNode, clickedAtr }) {
   const width = 1000;
-  const height = 800;
+  const height = 700;
   const margin = 0;
   const zoomX = 8 / 10;
   const zoomY = 9 / 10;
+  if (nodesData.length == 0) { return (<svg viewBox={`0 0 ${width} ${height}`} style={{ backgroundColor: "#ddd" }}></svg>) }
+
   const xScale = clickedNode != null ?
     d3.scaleLinear().domain([clickedNode.x - zoomX, clickedNode.x + zoomX]).range([margin, width - margin]).nice() :
     d3.scaleLinear().domain(d3.extent(nodesData.map(e => e.x))).range([margin, width - margin]).nice();
@@ -244,8 +260,8 @@ function Chart({ nodesData, linksData, clickedNode, setClickedNode, clickedAtr }
     d3.scaleLinear().domain([clickedNode.y - zoomY, clickedNode.y + zoomY]).range([margin, height - margin]).nice() :
     d3.scaleLinear().domain(d3.extent(nodesData.map(e => e.y))).range([margin, height - margin]).nice();
   const colorScale =
-    d3.scaleLinear().domain(d3.extent(nodesData.map(e => e.properties[clickedAtr]))).range(['white', '#28a745']).nice();
-  const col = { NONE: "#fff", COMEBACK: "#007bff", STOMPED: "#28a745" }
+    d3.scaleLinear().domain(d3.extent(nodesData.map(e => e.properties[clickedAtr]))).range(['white', green]).nice();
+  const col = { NONE: "#fff", COMEBACK: blue, STOMPED: green }
   const r = nodesData.length < 200 || clickedNode != null ? 6 : 3;
   return (
     <svg viewBox={`0 0 ${width} ${height}`} style={{ backgroundColor: "#ddd" }}>
@@ -253,7 +269,7 @@ function Chart({ nodesData, linksData, clickedNode, setClickedNode, clickedAtr }
         const highlight = clickedNode != null && (e.source.id == clickedNode.id || e.target.id == clickedNode.id);
         return (
           <g key={e.id}>
-            <line x1={xScale(e.source.x)} y1={yScale(e.source.y)} x2={xScale(e.target.x)} y2={yScale(e.target.y)} stroke={highlight ? "#ff69b4" : "#000"} strokeWidth={highlight ? 3 : 0.1}
+            <line x1={xScale(e.source.x)} y1={yScale(e.source.y)} x2={xScale(e.target.x)} y2={yScale(e.target.y)} stroke={highlight ? pink : "#000"} strokeWidth={highlight ? 3 : 0.1}
               style={highlight ? { cursor: "pointer" } : {}}
               onClick={() => {
                 if (highlight) {
@@ -269,7 +285,7 @@ function Chart({ nodesData, linksData, clickedNode, setClickedNode, clickedAtr }
         const highlight = clickedNode != null && e.id == clickedNode.id;
         return (
           <g key={e.id}>
-            <circle cx={xScale(e.x)} cy={yScale(e.y)} r={highlight ? r * 1.5 : r} stroke={highlight ? "#ff69b4" : "none"}
+            <circle cx={xScale(e.x)} cy={yScale(e.y)} r={highlight ? r * 1.5 : r} stroke={highlight ? pink : "none"}
               fill={
                 clickedAtr == null ?
                   col[e.properties.analysisOutcome] :
@@ -283,5 +299,112 @@ function Chart({ nodesData, linksData, clickedNode, setClickedNode, clickedAtr }
         )
       })}
     </svg>
+  )
+}
+function LineChart({ matchData }) {
+  const width = 1000;
+  const height = 700;
+  const margin = 50;
+  const yRange = [200, height - margin];
+  const yRange2 = [yRange[0], yRange[0] + (yRange[1] - yRange[0]) / 2, yRange[1]];
+  if (matchData == null) {
+    return (
+      <svg viewBox={`0 0 ${width} ${height}`} style={{ backgroundColor: "#ddd" }}>
+
+      </svg>
+    )
+  }
+  const data = matchData.data.match;
+  console.log(data);
+  const xScale = d3.scaleLinear().domain([0, data.winRates.length]).range([margin, width - margin]);
+  const yScaleW = d3.scaleLinear().domain([1, 0]).range(yRange);
+  const radiantNetworthLeadsMax = d3.extent(data.radiantNetworthLeads).reduce((e, v) => {
+    const av = Math.abs(v);
+    return av > e ? av : e;
+  }, 0);
+  const radiantExperienceLeadsMax = d3.extent(data.radiantExperienceLeads).reduce((e, v) => {
+    const av = Math.abs(v);
+    return av > e ? av : e;
+  }, 0);
+  const yScaleN = d3.scaleLinear().domain([radiantNetworthLeadsMax, 0, -radiantNetworthLeadsMax]).range(yRange2);
+  const yScaleE = d3.scaleLinear().domain([radiantExperienceLeadsMax, 0, -radiantExperienceLeadsMax]).range(yRange2);
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} style={{ backgroundColor: "#ddd" }}>
+      <DrawTitle data={data} width={width} />
+      {
+        <g>
+          {data.radiantExperienceLeads.map((e, i) => {
+            if (i % 5 != 0) { return <g key={i} /> }
+            return (
+              <g key={i}>
+                <line x1={xScale(i)} y1={yRange[0]} x2={xScale(i)} y2={yRange[1]} stroke="#000" strokeWidth={i == 0 ? 3 : 1} opacity={0.5} />
+                <text x={xScale(i)} y={yRange[1]} alignmentBaseline="text-before-edge" style={{ textAnchor: "middle", textAlign: "end" }}>{i}:00</text>
+              </g>
+            );
+          })}
+          <line x1={margin} y1={yRange2[1]} x2={width - margin} y2={yRange2[1]} stroke="#000" strokeWidth={2} opacity={0.5} />
+          <line x1={margin} y1={yRange[1]} x2={width - margin} y2={yRange[1]} stroke="#000" strokeWidth={2} opacity={0.5} />
+        </g>
+      }
+      {
+        <g>
+          <DrawLine data={data.winRates} xScale={xScale} yScale={yScaleW} fill={"#000"} />
+          <DrawLine data={data.radiantNetworthLeads} xScale={xScale} yScale={yScaleN} fill={green} />
+          <DrawLine data={data.radiantExperienceLeads} xScale={xScale} yScale={yScaleE} fill={blue} />
+        </g>
+      }
+    </svg>
+  )
+}
+
+function DrawTitle({ data, width }) {
+  const t = 30;
+  const w = 5 * t;
+  const h = 3 * t;
+  const radiantPlayer = data.players.filter(e => e.isRadiant);
+  const direPlayer = data.players.filter(e => !e.isRadiant);
+  console.log(radiantPlayer);
+  console.log(direPlayer);
+  return (
+    <g>
+      <text x={width / 2} y={0} style={{ textAnchor: "middle" }}>
+        <tspan x={width / 2} dy={0} fontSize={28} alignmentBaseline="text-before-edge" >{data.league.displayName}</tspan>
+        <tspan x={50 + w + 20} dy={70} fontSize={28} alignmentBaseline="text-before-edge" style={{ textAnchor: "start" }}>{data.radiantTeam.name}</tspan>
+        <tspan x={width / 2} dy={0} fontSize={28} alignmentBaseline="text-before-edge" > VS </tspan>
+        <tspan x={width - w - 50 - 20} dy={0} fontSize={28} alignmentBaseline="text-before-edge" style={{ textAnchor: "end" }}>{data.direTeam.name}</tspan>
+      </text>
+      <image x={50} y={35} width={w} height={h} href={data.radiantTeam.logo} />
+      <image x={width - w - 50} y={35} width={w} height={h} href={data.direTeam.logo} />
+      {
+        radiantPlayer.map((e, i) => {
+          return (
+            <image key={i} x={i * 75} y={45 + h} width={w} height={h / 1.5} href={`https://cdn.stratz.com/images/dota2/heroes/${e.hero.shortName}_icon.png`} />
+          )
+        })
+      }
+      {
+        direPlayer.map((e, i) => {
+          return (
+            <image key={i} x={width - w + (-i * 75)} y={45 + h} width={w} height={h / 1.5} href={`https://cdn.stratz.com/images/dota2/heroes/${e.hero.shortName}_icon.png`} />
+          )
+        })
+      }
+    </g>
+  )
+}
+
+function DrawLine({ data, xScale, yScale, fill }) {
+  return (
+    data.map((e, i, ary) => {
+      return (
+        <g key={i}>
+          <circle cx={xScale(i)} cy={yScale(e)} r={3} fill={fill} />
+          {
+            i <= ary.length - 2 &&
+            <line x1={xScale(i)} y1={yScale(e)} x2={xScale(i + 1)} y2={yScale(ary[i + 1])} stroke={fill} strokeWidth={1} />
+          }
+        </g>
+      )
+    })
   )
 }
