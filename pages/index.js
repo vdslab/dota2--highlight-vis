@@ -5,18 +5,7 @@ import { NextUIProvider, Button, Text, Input, Grid, Card, Spacer, Link } from '@
 
 const translate = ["戦闘時間", "初キル時間", "最大マルチキル数", "最大キルストリーク数", "勝率平均", "バイバック回数", "勝チームキル数", "負チームキル数"]
 
-export default function Home({
-  _nodesData,
-  _linksData,
-  _keyList,
-  _keyValues,
-  _leagueNames,
-}) {
-  // console.log(_nodesData);
-  // console.log(_linksData);
-  // console.log(_keyList);
-  // console.log(_keyValues);
-  // console.log(_leagueNames);
+export default function Home({ _nodesData, _linksData, _keyList, _keyValues, }) {
   const attributes = _keyList;
   const [nodesData, setNodesData] = useState(_nodesData);
   const [linksData, setLinksData] = useState(_linksData);
@@ -26,7 +15,6 @@ export default function Home({
   const [clickedAtr, setClickedAtr] = useState(null);
 
   useEffect(() => {
-    //console.log(attributesValue);
     console.time('nodesData');
     setNodesData(
       _nodesData.filter((e) => {
@@ -74,7 +62,6 @@ export default function Home({
                           attributesValue={attributesValue} setAttributesValue={setAttributesValue}
                           clickedAtr={clickedAtr} setClickedAtr={setClickedAtr} />
                       )
-
                     })
                   }
                 </>
@@ -118,12 +105,8 @@ export async function getStaticProps() {
   const _keyValues = _keyList.map((e) => {
     return (d3.extent(_nodesData.map((f) => f["properties"][e])))
   })
-  const _leagueNames = [...new Set(_nodesData.map((e) => {
-    return (e.properties.leagueName);
-  }))];
-
   return {
-    props: { _nodesData, _linksData, _keyList, _keyValues, _leagueNames },
+    props: { _nodesData, _linksData, _keyList, _keyValues },
   };
 }
 
@@ -161,7 +144,6 @@ function MyIcon({ type, fill, filled }) {
 }
 
 function Attributes({ attributesValue, setAttributesValue, clickedAtr, setClickedAtr, index }) {
-  //console.log(attributesValue);
   const clicked = clickedAtr == index;
   return (
     <div>
@@ -229,9 +211,6 @@ function DetailCard({ label, value }) {
 }
 
 function Chart({ nodesData, linksData, clickedNode, setClickedNode, clickedAtr }) {
-  console.log(nodesData);
-  console.log(linksData);
-  console.log(clickedAtr);
   const width = 1000;
   const height = 800;
   const margin = 0;
