@@ -106,7 +106,7 @@ export async function getStaticProps() {
     return (d3.extent(_nodesData.map((f) => f["properties"][e])))
   })
   return {
-    props: { _nodesData, _linksData, _keyList, _keyValues, _leagueNames },
+    props: { _nodesData, _linksData, _keyList, _keyValues },
   };
 }
 
