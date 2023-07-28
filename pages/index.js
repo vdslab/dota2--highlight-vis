@@ -267,7 +267,7 @@ function NetworkChart({ nodesData, linksData, clickedNode, setClickedNode, click
   const colorScale =
     d3.scaleLinear().domain(d3.extent(nodesData.map(e => e.properties[clickedAtr]))).range(['white', green]).nice();
   const col = { NONE: "#fff", COMEBACK: blue, STOMPED: green }
-  const r = nodesData.length < 200 || clickedNode != null ? 6 : 3;
+  const scaleUp = nodesData.length < 200 || clickedNode != null ? 2 : 1;
   return (
     <svg viewBox={`0 0 ${width} ${height}`} style={{ backgroundColor: "#ddd" }}>
       {linksData.map((e) => {
@@ -288,9 +288,16 @@ function NetworkChart({ nodesData, linksData, clickedNode, setClickedNode, click
       })}
       {nodesData.map((e) => {
         const highlight = clickedNode != null && e.id == clickedNode.id;
+        const scale = (highlight ? 1.5 : 1) * scaleUp;
+        const shape = {
+          NONE: "M0,3 A3,3 0 1,1 0,-3 A3,3 0 1,1 0,3",
+          COMEBACK: "M0,-4 L1.2682,-2.1908 L3.9021,-2.1908 L1.9055,0.948 L2.8531,3.8551 L0,1.5 L-2.8531,3.8551 L-1.9055,0.948 L-3.9021,-2.1908 L-1.2682,-2.1908 Z",
+          STOMPED: "M-3,-3 L3,-3 L3,3 L-3,3 Z",
+          CLOSE_GAME: "M0,-3 L2.5981,1.5 L-2.5981,1.5 Z"
+        }
         return (
           <g key={e.id}>
-            <circle cx={xScale(e.x)} cy={yScale(e.y)} r={highlight ? r * 1.5 : r} stroke={highlight ? pink : "none"}
+            <path d={shape[e.properties.analysisOutcome]} transform={`translate(${xScale(e.x)},${yScale(e.y)}),scale(${scale},${scale})`} stroke={highlight ? pink : "none"} strokeWidth={0.5}
               fill={
                 clickedAtr == null ?
                   col[e.properties.analysisOutcome] :
