@@ -45,7 +45,6 @@ export default function Home({ _nodesData, _linksData, _keyValues }) {
   const [currentMenu, setCurrentMenu] = useState(0);
   const [clickedNode, setClickedNode] = useState(null);
   const [clickedAtr, setClickedAtr] = useState(null);
-  const [youtubeLinks, setYoutubeLinks] = useState(null);
   const [matchData, setMatchData] = useState(null);
 
   useEffect(() => {
@@ -142,7 +141,6 @@ export default function Home({ _nodesData, _linksData, _keyValues }) {
                   clickedNode={clickedNode}
                   setClickedNode={setClickedNode}
                   matchData={matchData}
-                  youtubeLinks={youtubeLinks}
                 />
               )}
             </Grid>
@@ -310,7 +308,7 @@ function Attributes({
   );
 }
 
-function Detail({ attributes, clickedNode, setClickedNode, matchData, youtubeLinks }) {
+function Detail({ attributes, clickedNode, setClickedNode, matchData }) {
   //console.log(clickedNode);
   const data = matchData?.data?.match;
   const findText = data ? `${data.radiantTeam.name} VS ${data.direTeam.name} ${data.league.displayName} Game ${data.game}` : "";
