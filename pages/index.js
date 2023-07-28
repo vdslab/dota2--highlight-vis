@@ -2,6 +2,7 @@ import * as d3 from "d3";
 import { useEffect, useState } from "react";
 import { matchRequest, youtubeRequest } from "./api";
 import { NextUIProvider, Button, Text, Input, Grid, Card, Spacer, Link } from '@nextui-org/react';
+import { match } from "assert";
 
 const translate = ["戦闘時間", "初キル時間", "最大マルチキル数", "最大キルストリーク数", "勝率平均", "バイバック回数", "勝チームキル数", "負チームキル数"]
 const attributesStep = [100, 100, 1, 1, 1, 1, 1, 1];
@@ -128,7 +129,7 @@ export async function getStaticProps() {
     }
   });
   const _keyValues = attributes.map((e) => {
-    return (d3.extent(_nodesData.map((f) => f["properties"][e])))
+    return (d3.extent(_nodesData.map((f) => f["properties"][e])).map((f, i) => i == 0 ? Math.floor(f) : Math.ceil(f)));
   })
   return {
     props: { _nodesData, _linksData, _keyValues },
