@@ -74,7 +74,7 @@ export default function Home({ _nodesData, _linksData, _keyValues, }) {
             <MenuButton currentMenu={currentMenu} setCurrentMenu={setCurrentMenu} />
           </Grid.Container>
           <Grid.Container gap={2} wrap="wrap">
-            <Grid xs={12} direction="column" alignItems="center">
+            <Grid xs={12} direction="column" alignItems="stretch">
               {currentMenu == 0 &&
                 <>
                   <Button color="warning" onPress={() => { setAttributesValue(_keyValues); setClickedAtr(null); }}>入力リセット</Button>
@@ -134,7 +134,6 @@ export async function getStaticProps() {
     props: { _nodesData, _linksData, _keyValues },
   };
 }
-
 
 function MenuButton({ currentMenu, setCurrentMenu }) {
   const menu = ["フィルター", "詳細"];
