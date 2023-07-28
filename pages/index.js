@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 import { useEffect, useState } from "react";
-import { matchRequest, youtubeRequest } from "./api";
+import { matchRequest } from "./api";
 import {
   NextUIProvider,
   Button,
@@ -36,6 +36,7 @@ const attributes = [
 const green = "#28a745";
 const blue = "#007bff";
 const pink = "#ff69b4";
+const yellow = "#f3bf49";
 
 export default function Home({ _nodesData, _linksData, _keyValues }) {
   const [nodesData, setNodesData] = useState(_nodesData);
@@ -427,7 +428,14 @@ function NetworkChart({
     .domain(d3.extent(nodesData.map((e) => e.properties[clickedAtr])))
     .range(["white", green])
     .nice();
-  const col = { NONE: "#fff", COMEBACK: blue, STOMPED: green };
+  const col = { NONE: "#fff", COMEBACK: blue, STOMPED: yellow, CLOSE_GAME: "#000" };
+  const shape = {
+    NONE: "M0,3 A3,3 0 1,1 0,-3 A3,3 0 1,1 0,3",
+    COMEBACK:
+      "M0,-4 L1.2682,-2.1908 L3.9021,-2.1908 L1.9055,0.948 L2.8531,3.8551 L0,1.5 L-2.8531,3.8551 L-1.9055,0.948 L-3.9021,-2.1908 L-1.2682,-2.1908 Z",
+    STOMPED: "M-3,-3 L3,-3 L3,3 L-3,3 Z",
+    CLOSE_GAME: "M0,-3 L2.5981,1.5 L-2.5981,1.5 Z",
+  };
   const scaleUp = nodesData.length < 200 || clickedNode != null ? 2 : 1;
   return (
     <svg viewBox={`0 0 ${width} ${height}`} style={{ backgroundColor: "#ddd" }}>
@@ -462,13 +470,6 @@ function NetworkChart({
       {nodesData.map((e) => {
         const highlight = clickedNode != null && e.id == clickedNode.id;
         const scale = (highlight ? 1.5 : 1) * scaleUp;
-        const shape = {
-          NONE: "M0,3 A3,3 0 1,1 0,-3 A3,3 0 1,1 0,3",
-          COMEBACK:
-            "M0,-4 L1.2682,-2.1908 L3.9021,-2.1908 L1.9055,0.948 L2.8531,3.8551 L0,1.5 L-2.8531,3.8551 L-1.9055,0.948 L-3.9021,-2.1908 L-1.2682,-2.1908 Z",
-          STOMPED: "M-3,-3 L3,-3 L3,3 L-3,3 Z",
-          CLOSE_GAME: "M0,-3 L2.5981,1.5 L-2.5981,1.5 Z",
-        };
         return (
           <g key={e.id}>
             <path
@@ -493,13 +494,13 @@ function NetworkChart({
       })}
       {Object.keys(col).map((e, index) => {
         return (
-          <g key={e} transform={`translate(10,${index * 30 + 15})`}>
-            <circle x="0" y="0" r="10" fill={col[e]}></circle>
+          <g key={e} transform={`translate(15,${index * 30 + 15})`}>
+            <path d={shape[e]} fill={col[e]} transform="scale(3,3)" />
             <text
               alignmentBaseline="middle"
               textAnchor="MiddleLeft"
               x="20"
-              y="3"
+              y="1"
             >
               {e}
             </text>
@@ -568,8 +569,8 @@ function LineChart({ matchData, loading }) {
     .range(yRange2);
   const col = {
     winRates: "#000",
-    radiantNetworthLeads: blue,
-    radiantExperienceLeads: green,
+    radiantNetworthLeads: green,
+    radiantExperienceLeads: blue,
   };
   return (
     <svg viewBox={`0 0 ${width} ${height}`} style={{ backgroundColor: "#ddd" }}>

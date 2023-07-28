@@ -60,21 +60,3 @@ export async function matchRequest(id) {
   }
   return null;
 }
-
-export async function youtubeRequest(findText) {
-  const params = new URLSearchParams({
-    key: "AIzaSyBDqOadbmZbbHJ42OMv7wNmKsXT9uAE9AQ",
-    q: findText,
-    part: "snippet",
-    type: "video",
-    maxResults: 3
-  });
-  const url = `https://www.googleapis.com/youtube/v3/search?${params}`;
-  const response = await fetch(url);
-  if (response.status == 200) {
-    const result = await response.json();
-    return result.items;
-  }
-  const result = { id: { videoId: "" }, snippet: { title: "NoData" } }
-  return [result, result, result];
-}
