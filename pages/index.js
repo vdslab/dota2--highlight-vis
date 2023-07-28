@@ -2,7 +2,6 @@ import * as d3 from "d3";
 import { useEffect, useState } from "react";
 import { matchRequest, youtubeRequest } from "./api";
 import { NextUIProvider, Button, Text, Input, Grid, Card, Spacer, Link } from '@nextui-org/react';
-import { match } from "assert";
 
 const translate = ["戦闘時間", "初キル時間", "最大マルチキル数", "最大キルストリーク数", "勝率平均", "バイバック回数", "勝チームキル数", "負チームキル数"]
 const attributesStep = [100, 100, 1, 1, 1, 1, 1, 1];
@@ -276,8 +275,8 @@ function NetworkChart({ nodesData, linksData, clickedNode, setClickedNode, click
         const highlight = clickedNode != null && (e.source.id == clickedNode.id || e.target.id == clickedNode.id);
         return (
           <g key={e.id}>
-            <line x1={xScale(e.source.x)} y1={yScale(e.source.y)} x2={xScale(e.target.x)} y2={yScale(e.target.y)} stroke={highlight ? pink : "#000"} strokeWidth={highlight ? 3 : 0.1}
-              style={highlight ? { cursor: "pointer" } : {}}
+            <path d={`M ${xScale(e.source.x)},${yScale(e.source.y)} L${xScale(e.target.x)},${yScale(e.target.y)}`} stroke={highlight ? pink : "#000"} strokeWidth={highlight ? 3 : 0.1}
+              style={highlight ? { cursor: "pointer", transition: "all 1s 0s" } : { transition: "all 1s 0s" }}
               onClick={() => {
                 if (highlight) {
                   const nodeId = e.source.id == clickedNode.id ? e.target.id : e.source.id;
@@ -308,6 +307,7 @@ function NetworkChart({ nodesData, linksData, clickedNode, setClickedNode, click
     </svg>
   )
 }
+
 function LineChart({ matchData, loading }) {
   const width = 1000;
   const height = 700;
