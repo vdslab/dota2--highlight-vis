@@ -91,7 +91,7 @@ export default function Home({ _nodesData, _linksData, _keyValues, }) {
         <Grid xs={"auto"} direction="column" alignItems="center">
           <NetworkChart nodesData={nodesData} linksData={linksData} clickedNode={clickedNode} setClickedNode={setClickedNode} clickedAtr={clickedAtr != null ? attributes[clickedAtr] : null} />
           <Spacer y={2} />
-          <LineChart matchData={matchData} />
+          <LineChart matchData={matchData} loading={clickedNode != null} />
         </Grid>
       </Grid.Container >
     </NextUIProvider >
@@ -300,7 +300,7 @@ function NetworkChart({ nodesData, linksData, clickedNode, setClickedNode, click
     </svg>
   )
 }
-function LineChart({ matchData }) {
+function LineChart({ matchData, loading }) {
   const width = 1000;
   const height = 700;
   const margin = 50;
@@ -309,7 +309,7 @@ function LineChart({ matchData }) {
   if (matchData == null) {
     return (
       <svg viewBox={`0 0 ${width} ${height}`} style={{ backgroundColor: "#ddd" }}>
-
+        <text x={width / 2} y={height / 2} fontSize={56} style={{ textAnchor: "middle" }}>{loading ? "読み込み中！" : "ノードをクリックしてね！"}</text>
       </svg>
     )
   }
