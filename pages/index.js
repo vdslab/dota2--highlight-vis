@@ -330,7 +330,7 @@ function Detail({ attributes, clickedNode, setClickedNode, matchData }) {
               <DetailCard
                 key={i}
                 label={translate[i]}
-                value={clickedNode.properties[e]}
+                value={(i == 0 || i == 1) ? formatTime(clickedNode.properties[e]) : clickedNode.properties[e]}
               />
             );
           })}
@@ -359,6 +359,19 @@ function Detail({ attributes, clickedNode, setClickedNode, matchData }) {
       )}
     </>
   );
+}
+
+function formatTime(seconds) {
+  const isNegative = seconds < 0;
+  seconds = Math.abs(seconds);
+
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+
+  const formattedMinutes = String(minutes).padStart(2, '0');
+  const formattedSeconds = String(remainingSeconds).padStart(2, '0');
+
+  return `${isNegative ? "-" : ""}${formattedMinutes}:${formattedSeconds}`;
 }
 
 function DetailCard({ label, value }) {
