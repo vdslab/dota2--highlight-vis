@@ -317,7 +317,7 @@ function LineChart({ matchData }) {
   const radiantPlayer = data.players.filter(e => e.isRadiant);
   const direPlayer = data.players.filter(e => !e.isRadiant);
   //console.log(data);
-  const xScale = d3.scaleLinear().domain([0, data.winRates.length]).range([margin, width - margin]);
+  const xScale = d3.scaleLinear().domain([0, data.radiantNetworthLeads.length - 1]).range([margin, width - margin]);
   const yScaleW = d3.scaleLinear().domain([1, 0]).range(yRange);
   const radiantNetworthLeadsMax = d3.extent(data.radiantNetworthLeads).reduce((e, v) => {
     const av = Math.abs(v);
