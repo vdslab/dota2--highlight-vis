@@ -21,6 +21,13 @@ export default function Home({ _nodesData, _linksData, _keyValues, }) {
   const [matchData, setMatchData] = useState(null);
 
   useEffect(() => {
+    setAttributesValue(attributesValue.map((e, i) => {
+      return (i == 0 ? [2600, e[1]] : i == 2 ? [4, e[1]] : e)
+    }))
+    setClickedAtr(5);
+  }, [])
+
+  useEffect(() => {
     console.time('nodesData');
     setNodesData(
       _nodesData.filter((e) => {
@@ -70,7 +77,7 @@ export default function Home({ _nodesData, _linksData, _keyValues, }) {
             <Grid xs={12} direction="column" alignItems="center">
               {currentMenu == 0 &&
                 <>
-                  <Button color="warning" onPress={() => { setAttributesValue(_keyValues) }}>入力リセット</Button>
+                  <Button color="warning" onPress={() => { setAttributesValue(_keyValues); setClickedAtr(null); }}>入力リセット</Button>
                   {
                     attributes.map((e, i) => {
                       return (
