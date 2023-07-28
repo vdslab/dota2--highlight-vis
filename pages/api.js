@@ -53,6 +53,9 @@ export async function matchRequest(id) {
   });
   if (response.status == 200) {
     const result = await response.json();
+    const data = result.data.match;
+    const game = data.series.matches.map(e => e.id).sort((a, b) => a - b).indexOf(data.id) + 1;
+    data.game = game;
     return result;
   }
   return null;

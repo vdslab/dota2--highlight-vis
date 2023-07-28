@@ -28,18 +28,17 @@ export default function Home({ _nodesData, _linksData, _keyValues, }) {
   }, [])
 
   useEffect(() => {
-    console.time('nodesData');
+    //console.time('nodesData');
     setNodesData(
       _nodesData.filter((e) => {
         return attributesValue.every((f, i) => f[0] <= f[1] ? (f[0] <= e.properties[attributes[i]] && e.properties[attributes[i]] <= f[1]) : false);
       })
     )
-    console.timeEnd('nodesData');
-
+    //console.timeEnd('nodesData');
   }, [attributesValue])
 
   useEffect(() => {
-    console.time('linksData');
+    //console.time('linksData');
     const ids = nodesData.map((e) => e.id);
     if (ids.length != 0) {
       setLinksData(
@@ -50,15 +49,12 @@ export default function Home({ _nodesData, _linksData, _keyValues, }) {
     } else {
       setLinksData([]);
     }
-    console.timeEnd('linksData');
+    //console.timeEnd('linksData');
   }, [nodesData])
 
   useEffect(() => {
     if (clickedNode != null) {
       setCurrentMenu(1);
-      const findText = `${clickedNode.properties.winTeamName} VS ${clickedNode.properties.loseTeamName} ${clickedNode.properties.leagueName}`;
-      console.log(findText);
-      youtubeRequest(findText).then(r => setYoutubeLinks(r));
       matchRequest(clickedNode.properties.matchId).then(r => setMatchData(r));
     } else {
       setMatchData(null);
@@ -90,7 +86,7 @@ export default function Home({ _nodesData, _linksData, _keyValues, }) {
                 </>
               }
               {currentMenu == 1 &&
-                <Detail attributes={attributes} clickedNode={clickedNode} setClickedNode={setClickedNode} youtubeLinks={youtubeLinks} />
+                <Detail attributes={attributes} clickedNode={clickedNode} setClickedNode={setClickedNode} matchData={matchData} youtubeLinks={youtubeLinks} />
               }
             </Grid>
           </Grid.Container>
@@ -195,8 +191,10 @@ function Attributes({ attributesValue, setAttributesValue, clickedAtr, setClicke
   )
 }
 
-function Detail({ attributes, clickedNode, setClickedNode, youtubeLinks }) {
+function Detail({ attributes, clickedNode, setClickedNode, matchData, youtubeLinks }) {
   //console.log(clickedNode);
+  const data = matchData?.data?.match;
+  const findText = data ? `${data.radiantTeam.name} VS ${data.direTeam.name} ${data.league.displayName} Game ${data.game}` : "";
   return (
     <>
       <Button color="warning" onPress={() => { setClickedNode(null) }}>選択解除</Button>
@@ -216,21 +214,14 @@ function Detail({ attributes, clickedNode, setClickedNode, youtubeLinks }) {
             </Card.Body>
           </Card>
           <Spacer y={0.5} />
-          {youtubeLinks?.map((e, i) => {
-            console.log(e);
-            return (
-              <div key={i}>
-                <Card>
-                  <Card.Body>
-                    <Link href={`https://www.youtube.com/watch?v=${e.id.videoId}`} target="_blank" underline isExternal>
-                      {e.snippet.title}
-                    </Link>
-                  </Card.Body>
-                </Card>
-                <Spacer y={0.5} />
-              </div>
-            )
-          })}
+          <Card>
+            <Card.Body>
+              <Link href={`https://www.youtube.com/results?search_query=${findText}`} target="_blank" underline isExternal>
+                YouTubeで検索する
+              </Link>
+            </Card.Body>
+          </Card>
+          <Spacer y={0.5} />
         </>
       }
     </>
