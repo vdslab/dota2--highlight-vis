@@ -274,7 +274,7 @@ function NetworkChart({ nodesData, linksData, clickedNode, setClickedNode, click
         const highlight = clickedNode != null && (e.source.id == clickedNode.id || e.target.id == clickedNode.id);
         return (
           <g key={e.id}>
-            <path d={`M ${xScale(e.source.x)},${yScale(e.source.y)} L${xScale(e.target.x)},${yScale(e.target.y)}`} stroke={highlight ? pink : "#000"} strokeWidth={highlight ? 3 : 0.1}
+            <path d={`M ${xScale(e.source.x)},${yScale(e.source.y)} L${xScale(e.target.x)},${yScale(e.target.y)}`} stroke={highlight ? pink : "#000"} strokeWidth={highlight ? 6 : 0.1}
               style={highlight ? { cursor: "pointer", transition: "all 1s 0s" } : { transition: "all 1s 0s" }}
               onClick={() => {
                 if (highlight) {
