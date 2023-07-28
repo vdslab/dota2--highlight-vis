@@ -218,7 +218,7 @@ function Detail({ attributes, clickedNode, setClickedNode, youtubeLinks }) {
             </Card.Body>
           </Card>
           <Spacer y={0.5} />
-          {youtubeLinks != null && youtubeLinks.items.map((e, i) => {
+          {youtubeLinks?.map((e, i) => {
             console.log(e);
             return (
               <div key={i}>

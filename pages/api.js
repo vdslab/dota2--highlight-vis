@@ -70,7 +70,8 @@ export async function youtubeRequest(findText) {
   const response = await fetch(url);
   if (response.status == 200) {
     const result = await response.json();
-    return result;
+    return result.items;
   }
-  return null;
+  const result = { id: { videoId: "" }, snippet: { title: "NoData" } }
+  return [result, result, result];
 }
