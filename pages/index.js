@@ -379,16 +379,29 @@ function formatTime(seconds) {
 function DetailCard({ label, value }) {
   return (
     <>
-      <Card key={label}>
-        <Card.Body>
-          <Text>
-            {label} : {value}
-          </Text>
-        </Card.Body>
-      </Card>
+      <Grid.Container gap={1}>
+        <Grid xs={7}>
+          <CartText t={label} />
+        </Grid>
+        <Grid xs={5}>
+          <CartText t={value} />
+        </Grid >
+      </Grid.Container>
       <Spacer y={0.5} />
     </>
   );
+}
+
+function CartText({ t }) {
+  return (
+    <Card>
+      <Card.Body>
+        <Text>
+          {t}
+        </Text>
+      </Card.Body>
+    </Card>
+  )
 }
 
 function NetworkChart({
