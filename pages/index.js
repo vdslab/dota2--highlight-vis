@@ -503,21 +503,24 @@ function NetworkChart({
           </g>
         );
       })}
-      {Object.keys(col).map((e, index) => {
-        return (
-          <g key={e} transform={`translate(15,${index * 30 + 15})`}>
-            <path d={shape[e]} fill={col[e]} transform="scale(3,3)" />
-            <text
-              alignmentBaseline="middle"
-              textAnchor="MiddleLeft"
-              x="20"
-              y="1"
-            >
-              {e}
-            </text>
-          </g>
-        );
-      })}
+      <g>
+        <rect x={3} y={3} width={140} height={115} fill="#999" opacity={0.6} />
+        {Object.keys(col).map((e, index) => {
+          return (
+            <g key={e} transform={`translate(15,${index * 30 + 15})`}>
+              <path d={shape[e]} fill={col[e]} transform="scale(3,3)" />
+              <text
+                alignmentBaseline="middle"
+                textAnchor="MiddleLeft"
+                x="20"
+                y="1"
+              >
+                {e}
+              </text>
+            </g>
+          );
+        })}
+      </g>
     </svg>
   );
 }
