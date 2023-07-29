@@ -464,8 +464,8 @@ function NetworkChart({
               strokeWidth={highlight ? 6 : 0.1}
               style={
                 highlight
-                  ? { cursor: "pointer", transition: "all 1s 0s" }
-                  : { transition: "all 1s 0s" }
+                  ? { cursor: "pointer", transition: "d 1s 0s" }
+                  : { transition: "d 1s 0s" }
               }
               onClick={() => {
                 if (highlight) {
@@ -495,7 +495,7 @@ function NetworkChart({
                   ? col[e.properties.analysisOutcome]
                   : colorScale(e.properties[clickedAtr])
               }
-              style={{ transition: "all 1s 0s", cursor: "pointer" }}
+              style={{ transition: "d 1s 0s, transform 1s 0s", cursor: "pointer" }}
               onClick={() => {
                 setClickedNode(e);
               }}
