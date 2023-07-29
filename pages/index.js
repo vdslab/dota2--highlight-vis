@@ -48,6 +48,7 @@ export default function Home({ _nodesData, _linksData, _keyValues }) {
   const [clickedAtr, setClickedAtr] = useState(null);
   const [matchData, setMatchData] = useState(null);
   const [toolTip, setToolTip] = useState(null);
+  const [outcomeFilter, setOutcomeFilter] = useState({ NONE: true, COMEBACK: true, STOMPED: true, CLOSE_GAME: true });
 
   useEffect(() => {
     setAttributesValue(
@@ -67,11 +68,11 @@ export default function Home({ _nodesData, _linksData, _keyValues }) {
             ? f[0] <= e.properties[attributes[i]] &&
             e.properties[attributes[i]] <= f[1]
             : false
-        );
+        ) && outcomeFilter[e.properties.analysisOutcome];
       })
     )
     //console.timeEnd('nodesData');
-  }, [attributesValue])
+  }, [attributesValue, outcomeFilter])
 
   useEffect(() => {
     //console.time('linksData');
@@ -155,6 +156,8 @@ export default function Home({ _nodesData, _linksData, _keyValues }) {
             clickedNode={clickedNode}
             setClickedNode={setClickedNode}
             clickedAtr={clickedAtr != null ? attributes[clickedAtr] : null}
+            outcomeFilter={outcomeFilter}
+            setOutcomeFilter={setOutcomeFilter}
           />
           <Spacer y={2} />
           <LineChart matchData={matchData} loading={clickedNode != null} toolTip={toolTip} setToolTip={setToolTip} />
@@ -410,6 +413,8 @@ function NetworkChart({
   clickedNode,
   setClickedNode,
   clickedAtr,
+  outcomeFilter,
+  setOutcomeFilter
 }) {
   const width = 1000;
   const height = 700;
@@ -522,7 +527,12 @@ function NetworkChart({
         <rect x={3} y={3} width={140} height={115} fill="#999" opacity={0.6} />
         {Object.keys(col).map((e, index) => {
           return (
-            <g key={e} transform={`translate(15,${index * 30 + 15})`}>
+            <g key={e} transform={`translate(15,${index * 30 + 15})`} onClick={() => {
+              outcomeFilter[e] = !outcomeFilter[e];
+              setOutcomeFilter({ ...outcomeFilter });
+            }}
+              opacity={outcomeFilter[e] ? 1 : 0.2}
+              style={{ cursor: "pointer" }}>
               <path d={shape[e]} fill={col[e]} transform="scale(3,3)" />
               <text
                 alignmentBaseline="middle"
