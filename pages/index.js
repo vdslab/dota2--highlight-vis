@@ -33,6 +33,7 @@ const attributes = [
   "winTeamKills",
   "loseTeamKills",
 ];
+const multiKill = ["KILL", "DOUBLE KILL", "TRIPLE KILL", "ULTRA KILL", "RAMPAGE", "DOUBLE RAMPAGE", "TRIPLE RAMPAGE"];
 const green = "#28a745";
 const blue = "#007bff";
 const pink = "#ff69b4";
@@ -46,6 +47,7 @@ export default function Home({ _nodesData, _linksData, _keyValues }) {
   const [clickedNode, setClickedNode] = useState(null);
   const [clickedAtr, setClickedAtr] = useState(null);
   const [matchData, setMatchData] = useState(null);
+  const [toolTip, setToolTip] = useState(null);
 
   useEffect(() => {
     setAttributesValue(
@@ -155,7 +157,7 @@ export default function Home({ _nodesData, _linksData, _keyValues }) {
             clickedAtr={clickedAtr != null ? attributes[clickedAtr] : null}
           />
           <Spacer y={2} />
-          <LineChart matchData={matchData} loading={clickedNode != null} />
+          <LineChart matchData={matchData} loading={clickedNode != null} toolTip={toolTip} setToolTip={setToolTip} />
         </Grid>
       </Grid.Container>
     </NextUIProvider>
@@ -525,7 +527,7 @@ function NetworkChart({
   );
 }
 
-function LineChart({ matchData, loading }) {
+function LineChart({ matchData, loading, toolTip, setToolTip }) {
   const width = 1000;
   const height = 700;
   const margin = 50;
@@ -664,44 +666,8 @@ function LineChart({ matchData, loading }) {
           />
         </g>
       }
-      {radiantPlayer.map((e, i) => {
-        const s = e.playbackData.streakEvents.filter(
-          (f) => f.type == "MULTI_KILL"
-        );
-        return s.map((f, i) => {
-          const size = f.value * 10;
-          return (
-            <image
-              key={i}
-              x={xScale(f.time / 60) - size / 2}
-              y={yRange[0] + ((f.value - 2) * size) / 2}
-              width={size}
-              height={size}
-              href={`https://cdn.stratz.com/images/dota2/heroes/${e.hero.shortName}_icon.png`}
-              opacity={0.8}
-            />
-          );
-        });
-      })}
-      {direPlayer.map((e, i) => {
-        const s = e.playbackData.streakEvents.filter(
-          (f) => f.type == "MULTI_KILL"
-        );
-        return s.map((f, i) => {
-          const size = f.value * 10;
-          return (
-            <image
-              key={i}
-              x={xScale(f.time / 60) - size / 2}
-              y={yRange[1] - ((f.value - 2) * size) / 2 - size}
-              width={size}
-              height={size}
-              href={`https://cdn.stratz.com/images/dota2/heroes/${e.hero.shortName}_icon.png`}
-              opacity={0.8}
-            />
-          );
-        });
-      })}
+      <FaceVis player={radiantPlayer} xScale={xScale} yRange={yRange} isRadiant={true} setToolTip={setToolTip} />
+      <FaceVis player={direPlayer} xScale={xScale} yRange={yRange} isRadiant={false} setToolTip={setToolTip} />
       {Object.keys(col).map((e, index) => {
         return (
           <g key={e} transform={`translate(70,${index * 30 + 205})`}>
@@ -717,8 +683,47 @@ function LineChart({ matchData, loading }) {
           </g>
         );
       })}
+      {toolTip != null &&
+        <g>
+          <rect x={toolTip.x - 150} y={toolTip.y} width={150} height={50} fill="#fff" opacity={0.8} />
+          <text x={toolTip.x - 75} y={toolTip.y + 13} alignmentBaseline="middle" textAnchor="middle">
+            {multiKill[toolTip.value - 1]}
+          </text>
+          <text x={toolTip.x - 75} y={toolTip.y + 37} alignmentBaseline="middle" textAnchor="middle">
+            {formatTime(toolTip.time)}
+          </text>
+        </g>
+      }
     </svg>
   );
+}
+
+function FaceVis({ player, xScale, yRange, isRadiant, setToolTip }) {
+  return (
+    player.map((e, i) => {
+      const s = e.playbackData.streakEvents.filter(
+        (f) => f.type == "MULTI_KILL"
+      );
+      return s.map((f, i) => {
+        const size = f.value * 10;
+        const x = xScale(f.time / 60) - size / 2;
+        const y = isRadiant ? yRange[0] + ((f.value - 2) * size) / 2 : yRange[1] - ((f.value - 2) * size) / 2 - size;
+        return (
+          <image
+            key={i}
+            x={x}
+            y={y}
+            width={size}
+            height={size}
+            href={`https://cdn.stratz.com/images/dota2/heroes/${e.hero.shortName}_icon.png`}
+            opacity={0.8}
+            onMouseOver={() => { setToolTip({ x: x, y: y, value: f.value, time: f.time }) }}
+            onMouseOut={() => { setToolTip(null) }}
+          />
+        );
+      });
+    })
+  )
 }
 
 function DrawTitle({ data, radiantPlayer, direPlayer, width }) {
