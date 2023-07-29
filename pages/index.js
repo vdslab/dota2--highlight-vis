@@ -311,7 +311,7 @@ function Attributes({
 function Detail({ attributes, clickedNode, setClickedNode, matchData }) {
   //console.log(clickedNode);
   const data = matchData?.data?.match;
-  const findText = data ? `${data.radiantTeam.name} VS ${data.direTeam.name} ${data.league.displayName} Game ${data.game}` : "";
+  const findText = data ? `${data.radiantTeam.name} VS ${data.direTeam.name} ${data.league.displayName} Game${data.game}` : "";
   return (
     <>
       <Button
