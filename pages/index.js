@@ -101,7 +101,7 @@ export default function Home({ _nodesData, _linksData, _keyValues }) {
   return (
     <NextUIProvider>
       <Text h1 style={{ textAlign: "center" }}>
-        Dota2
+        Dota2 Highlight Visualization
       </Text>
       <Grid.Container gap={2}>
         <Grid xs={"auto"} sm={4} direction="column" alignItems="center">
