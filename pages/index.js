@@ -33,7 +33,15 @@ const attributes = [
   "winTeamKills",
   "loseTeamKills",
 ];
-const multiKill = ["KILL", "DOUBLE KILL", "TRIPLE KILL", "ULTRA KILL", "RAMPAGE", "DOUBLE RAMPAGE", "TRIPLE RAMPAGE"];
+const multiKill = [
+  "KILL",
+  "DOUBLE KILL",
+  "TRIPLE KILL",
+  "ULTRA KILL",
+  "RAMPAGE",
+  "DOUBLE RAMPAGE",
+  "TRIPLE RAMPAGE",
+];
 const green = "#28a745";
 const blue = "#007bff";
 const pink = "#ff69b4";
@@ -48,7 +56,12 @@ export default function Home({ _nodesData, _linksData, _keyValues }) {
   const [clickedAtr, setClickedAtr] = useState(null);
   const [matchData, setMatchData] = useState(null);
   const [toolTip, setToolTip] = useState(null);
-  const [outcomeFilter, setOutcomeFilter] = useState({ NONE: true, COMEBACK: true, STOMPED: true, CLOSE_GAME: true });
+  const [outcomeFilter, setOutcomeFilter] = useState({
+    NONE: true,
+    COMEBACK: true,
+    STOMPED: true,
+    CLOSE_GAME: true,
+  });
 
   useEffect(() => {
     setAttributesValue(
@@ -63,16 +76,18 @@ export default function Home({ _nodesData, _linksData, _keyValues }) {
     //console.time('nodesData');
     setNodesData(
       _nodesData.filter((e) => {
-        return attributesValue.every((f, i) =>
-          f[0] <= f[1]
-            ? f[0] <= e.properties[attributes[i]] &&
-            e.properties[attributes[i]] <= f[1]
-            : false
-        ) && outcomeFilter[e.properties.analysisOutcome];
+        return (
+          attributesValue.every((f, i) =>
+            f[0] <= f[1]
+              ? f[0] <= e.properties[attributes[i]] &&
+                e.properties[attributes[i]] <= f[1]
+              : false
+          ) && outcomeFilter[e.properties.analysisOutcome]
+        );
       })
-    )
+    );
     //console.timeEnd('nodesData');
-  }, [attributesValue, outcomeFilter])
+  }, [attributesValue, outcomeFilter]);
 
   useEffect(() => {
     //console.time('linksData');
@@ -87,12 +102,12 @@ export default function Home({ _nodesData, _linksData, _keyValues }) {
       setLinksData([]);
     }
     //console.timeEnd('linksData');
-  }, [nodesData])
+  }, [nodesData]);
 
   useEffect(() => {
     if (clickedNode != null) {
       setCurrentMenu(1);
-      matchRequest(clickedNode.properties.matchId).then(r => setMatchData(r));
+      matchRequest(clickedNode.properties.matchId).then((r) => setMatchData(r));
     } else {
       setMatchData(null);
     }
@@ -160,7 +175,12 @@ export default function Home({ _nodesData, _linksData, _keyValues }) {
             setOutcomeFilter={setOutcomeFilter}
           />
           <Spacer y={2} />
-          <LineChart matchData={matchData} loading={clickedNode != null} toolTip={toolTip} setToolTip={setToolTip} />
+          <LineChart
+            matchData={matchData}
+            loading={clickedNode != null}
+            toolTip={toolTip}
+            setToolTip={setToolTip}
+          />
         </Grid>
       </Grid.Container>
     </NextUIProvider>
@@ -316,7 +336,9 @@ function Attributes({
 function Detail({ attributes, clickedNode, setClickedNode, matchData }) {
   //console.log(clickedNode);
   const data = matchData?.data?.match;
-  const findText = data ? `${data.radiantTeam.name} VS ${data.direTeam.name} ${data.league.displayName} Game${data.game}` : "";
+  const findText = data
+    ? `${data.radiantTeam.name} VS ${data.direTeam.name} ${data.league.displayName} Game${data.game}`
+    : "";
   return (
     <>
       <Button
@@ -335,7 +357,11 @@ function Detail({ attributes, clickedNode, setClickedNode, matchData }) {
               <DetailCard
                 key={i}
                 label={translate[i]}
-                value={(i == 0 || i == 1) ? formatTime(clickedNode.properties[e]) : clickedNode.properties[e]}
+                value={
+                  i == 0 || i == 1
+                    ? formatTime(clickedNode.properties[e])
+                    : clickedNode.properties[e]
+                }
               />
             );
           })}
@@ -354,7 +380,12 @@ function Detail({ attributes, clickedNode, setClickedNode, matchData }) {
           <Spacer y={0.5} />
           <Card>
             <Card.Body>
-              <Link href={`https://www.youtube.com/results?search_query=${findText}`} target="_blank" underline isExternal>
+              <Link
+                href={`https://www.youtube.com/results?search_query=${findText}`}
+                target="_blank"
+                underline
+                isExternal
+              >
                 YouTubeで検索する
               </Link>
             </Card.Body>
@@ -373,8 +404,8 @@ function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
 
-  const formattedMinutes = String(minutes).padStart(2, '0');
-  const formattedSeconds = String(remainingSeconds).padStart(2, '0');
+  const formattedMinutes = String(minutes).padStart(2, "0");
+  const formattedSeconds = String(remainingSeconds).padStart(2, "0");
 
   return `${isNegative ? "-" : ""}${formattedMinutes}:${formattedSeconds}`;
 }
@@ -388,7 +419,7 @@ function DetailCard({ label, value }) {
         </Grid>
         <Grid xs={5}>
           <CartText t={value} />
-        </Grid >
+        </Grid>
       </Grid.Container>
       <Spacer y={0.5} />
     </>
@@ -399,12 +430,10 @@ function CartText({ t }) {
   return (
     <Card>
       <Card.Body>
-        <Text>
-          {t}
-        </Text>
+        <Text>{t}</Text>
       </Card.Body>
     </Card>
-  )
+  );
 }
 
 function NetworkChart({
@@ -414,52 +443,19 @@ function NetworkChart({
   setClickedNode,
   clickedAtr,
   outcomeFilter,
-  setOutcomeFilter
+  setOutcomeFilter,
 }) {
   const width = 1000;
   const height = 700;
   const margin = 0;
   const zoomX = 8 / 10;
   const zoomY = 9 / 10;
-  if (nodesData.length == 0) {
-    return (
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        style={{ backgroundColor: "#ddd" }}
-      ></svg>
-    );
-  }
-
-  const xScale =
-    clickedNode != null
-      ? d3
-        .scaleLinear()
-        .domain([clickedNode.x - zoomX, clickedNode.x + zoomX])
-        .range([margin, width - margin])
-        .nice()
-      : d3
-        .scaleLinear()
-        .domain(d3.extent(nodesData.map((e) => e.x)))
-        .range([margin, width - margin])
-        .nice();
-  const yScale =
-    clickedNode != null
-      ? d3
-        .scaleLinear()
-        .domain([clickedNode.y - zoomY, clickedNode.y + zoomY])
-        .range([margin, height - margin])
-        .nice()
-      : d3
-        .scaleLinear()
-        .domain(d3.extent(nodesData.map((e) => e.y)))
-        .range([margin, height - margin])
-        .nice();
-  const colorScale = d3
-    .scaleLinear()
-    .domain(d3.extent(nodesData.map((e) => e.properties[clickedAtr])))
-    .range(["white", green])
-    .nice();
-  const col = { NONE: "#fff", COMEBACK: blue, STOMPED: yellow, CLOSE_GAME: "#000" };
+  const col = {
+    NONE: "#fff",
+    COMEBACK: blue,
+    STOMPED: yellow,
+    CLOSE_GAME: "#000",
+  };
   const shape = {
     NONE: "M0,3 A3,3 0 1,1 0,-3 A3,3 0 1,1 0,3",
     COMEBACK:
@@ -467,6 +463,81 @@ function NetworkChart({
     STOMPED: "M-3,-3 L3,-3 L3,3 L-3,3 Z",
     CLOSE_GAME: "M0,-3 L2.5981,1.5 L-2.5981,1.5 Z",
   };
+
+  function DrawOutcomeFilter() {
+    return (
+      <g>
+        <rect x={3} y={3} width={140} height={115} fill="#999" opacity={0.6} />
+        {Object.keys(col).map((e, index) => {
+          return (
+            <g
+              key={e}
+              transform={`translate(15,${index * 30 + 15})`}
+              onClick={() => {
+                outcomeFilter[e] = !outcomeFilter[e];
+                setOutcomeFilter({ ...outcomeFilter });
+              }}
+              opacity={outcomeFilter[e] ? 1 : 0.2}
+              style={{ cursor: "pointer" }}
+            >
+              <path d={shape[e]} fill={col[e]} transform="scale(3,3)" />
+              <text
+                alignmentBaseline="middle"
+                textAnchor="MiddleLeft"
+                x="20"
+                y="1"
+              >
+                {e}
+              </text>
+            </g>
+          );
+        })}
+      </g>
+    );
+  }
+
+  if (nodesData.length == 0) {
+    console.log("no data");
+    return (
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        style={{ backgroundColor: "#ddd" }}
+      >
+        <DrawOutcomeFilter />
+      </svg>
+    );
+  }
+
+  const xScale =
+    clickedNode != null
+      ? d3
+          .scaleLinear()
+          .domain([clickedNode.x - zoomX, clickedNode.x + zoomX])
+          .range([margin, width - margin])
+          .nice()
+      : d3
+          .scaleLinear()
+          .domain(d3.extent(nodesData.map((e) => e.x)))
+          .range([margin, width - margin])
+          .nice();
+  const yScale =
+    clickedNode != null
+      ? d3
+          .scaleLinear()
+          .domain([clickedNode.y - zoomY, clickedNode.y + zoomY])
+          .range([margin, height - margin])
+          .nice()
+      : d3
+          .scaleLinear()
+          .domain(d3.extent(nodesData.map((e) => e.y)))
+          .range([margin, height - margin])
+          .nice();
+  const colorScale = d3
+    .scaleLinear()
+    .domain(d3.extent(nodesData.map((e) => e.properties[clickedAtr])))
+    .range(["white", green])
+    .nice();
+
   const scaleUp = nodesData.length < 200 || clickedNode != null ? 2 : 1;
   return (
     <svg viewBox={`0 0 ${width} ${height}`} style={{ backgroundColor: "#ddd" }}>
@@ -515,7 +586,10 @@ function NetworkChart({
                   ? col[e.properties.analysisOutcome]
                   : colorScale(e.properties[clickedAtr])
               }
-              style={{ transition: "d 1s 0s, transform 1s 0s", cursor: "pointer" }}
+              style={{
+                transition: "d 1s 0s, transform 1s 0s",
+                cursor: "pointer",
+              }}
               onClick={() => {
                 setClickedNode(e);
               }}
@@ -523,29 +597,7 @@ function NetworkChart({
           </g>
         );
       })}
-      <g>
-        <rect x={3} y={3} width={140} height={115} fill="#999" opacity={0.6} />
-        {Object.keys(col).map((e, index) => {
-          return (
-            <g key={e} transform={`translate(15,${index * 30 + 15})`} onClick={() => {
-              outcomeFilter[e] = !outcomeFilter[e];
-              setOutcomeFilter({ ...outcomeFilter });
-            }}
-              opacity={outcomeFilter[e] ? 1 : 0.2}
-              style={{ cursor: "pointer" }}>
-              <path d={shape[e]} fill={col[e]} transform="scale(3,3)" />
-              <text
-                alignmentBaseline="middle"
-                textAnchor="MiddleLeft"
-                x="20"
-                y="1"
-              >
-                {e}
-              </text>
-            </g>
-          );
-        })}
-      </g>
+      <DrawOutcomeFilter />
     </svg>
   );
 }
@@ -689,8 +741,20 @@ function LineChart({ matchData, loading, toolTip, setToolTip }) {
           />
         </g>
       }
-      <FaceVis player={radiantPlayer} xScale={xScale} yRange={yRange} isRadiant={true} setToolTip={setToolTip} />
-      <FaceVis player={direPlayer} xScale={xScale} yRange={yRange} isRadiant={false} setToolTip={setToolTip} />
+      <FaceVis
+        player={radiantPlayer}
+        xScale={xScale}
+        yRange={yRange}
+        isRadiant={true}
+        setToolTip={setToolTip}
+      />
+      <FaceVis
+        player={direPlayer}
+        xScale={xScale}
+        yRange={yRange}
+        isRadiant={false}
+        setToolTip={setToolTip}
+      />
       {Object.keys(col).map((e, index) => {
         return (
           <g key={e} transform={`translate(70,${index * 30 + 205})`}>
@@ -706,47 +770,66 @@ function LineChart({ matchData, loading, toolTip, setToolTip }) {
           </g>
         );
       })}
-      {toolTip != null &&
+      {toolTip != null && (
         <g>
-          <rect x={toolTip.x - 150} y={toolTip.y} width={150} height={50} fill="#fff" opacity={0.8} />
-          <text x={toolTip.x - 75} y={toolTip.y + 13} alignmentBaseline="middle" textAnchor="middle">
+          <rect
+            x={toolTip.x - 150}
+            y={toolTip.y}
+            width={150}
+            height={50}
+            fill="#fff"
+            opacity={0.8}
+          />
+          <text
+            x={toolTip.x - 75}
+            y={toolTip.y + 13}
+            alignmentBaseline="middle"
+            textAnchor="middle"
+          >
             {multiKill[toolTip.value - 1]}
           </text>
-          <text x={toolTip.x - 75} y={toolTip.y + 37} alignmentBaseline="middle" textAnchor="middle">
+          <text
+            x={toolTip.x - 75}
+            y={toolTip.y + 37}
+            alignmentBaseline="middle"
+            textAnchor="middle"
+          >
             {formatTime(toolTip.time)}
           </text>
         </g>
-      }
+      )}
     </svg>
   );
 }
 
 function FaceVis({ player, xScale, yRange, isRadiant, setToolTip }) {
-  return (
-    player.map((e, i) => {
-      const s = e.playbackData.streakEvents.filter(
-        (f) => f.type == "MULTI_KILL"
+  return player.map((e, i) => {
+    const s = e.playbackData.streakEvents.filter((f) => f.type == "MULTI_KILL");
+    return s.map((f, i) => {
+      const size = f.value * 10;
+      const x = xScale(f.time / 60) - size / 2;
+      const y = isRadiant
+        ? yRange[0] + ((f.value - 2) * size) / 2
+        : yRange[1] - ((f.value - 2) * size) / 2 - size;
+      return (
+        <image
+          key={i}
+          x={x}
+          y={y}
+          width={size}
+          height={size}
+          href={`https://cdn.stratz.com/images/dota2/heroes/${e.hero.shortName}_icon.png`}
+          opacity={0.8}
+          onMouseOver={() => {
+            setToolTip({ x: x, y: y, value: f.value, time: f.time });
+          }}
+          onMouseOut={() => {
+            setToolTip(null);
+          }}
+        />
       );
-      return s.map((f, i) => {
-        const size = f.value * 10;
-        const x = xScale(f.time / 60) - size / 2;
-        const y = isRadiant ? yRange[0] + ((f.value - 2) * size) / 2 : yRange[1] - ((f.value - 2) * size) / 2 - size;
-        return (
-          <image
-            key={i}
-            x={x}
-            y={y}
-            width={size}
-            height={size}
-            href={`https://cdn.stratz.com/images/dota2/heroes/${e.hero.shortName}_icon.png`}
-            opacity={0.8}
-            onMouseOver={() => { setToolTip({ x: x, y: y, value: f.value, time: f.time }) }}
-            onMouseOut={() => { setToolTip(null) }}
-          />
-        );
-      });
-    })
-  )
+    });
+  });
 }
 
 function DrawTitle({ data, radiantPlayer, direPlayer, width }) {
