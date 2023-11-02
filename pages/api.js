@@ -1,6 +1,6 @@
 export async function matchRequest(id) {
   const access_token =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1laWQiOiJodHRwczovL3N0ZWFtY29tbXVuaXR5LmNvbS9vcGVuaWQvaWQvNzY1NjExOTgwNDA5NzYzMTYiLCJ1bmlxdWVfbmFtZSI6IkJsdWVrb29wYSIsIlN1YmplY3QiOiI5YmFlYzA5YS0wNTk4LTQyOWItOWI2ZS1kNTBkMjE0ZDllNTQiLCJTdGVhbUlkIjoiODA3MTA1ODgiLCJuYmYiOjE2NjAxOTA0MTcsImV4cCI6MTY5MTcyNjQxNywiaWF0IjoxNjYwMTkwNDE3LCJpc3MiOiJodHRwczovL2FwaS5zdHJhdHouY29tIn0.24rFe6QiDLahL6qP-uZvXUs-OEE2GbooWFJXZyOXRCE";
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJTdWJqZWN0IjoiOWJhZWMwOWEtMDU5OC00MjliLTliNmUtZDUwZDIxNGQ5ZTU0IiwiU3RlYW1JZCI6IjgwNzEwNTg4IiwibmJmIjoxNjkwNTcwMjg2LCJleHAiOjE3MjIxMDYyODYsImlhdCI6MTY5MDU3MDI4NiwiaXNzIjoiaHR0cHM6Ly9hcGkuc3RyYXR6LmNvbSJ9.o1ej08QdcZUX_RBhamMo78f_zFZaazLRN-2X7d3A8fE";
   const query = `
     {
       match(id:${id}){
@@ -54,7 +54,11 @@ export async function matchRequest(id) {
   if (response.status == 200) {
     const result = await response.json();
     const data = result.data.match;
-    const game = data.series.matches.map(e => e.id).sort((a, b) => a - b).indexOf(data.id) + 1;
+    const game =
+      data.series.matches
+        .map((e) => e.id)
+        .sort((a, b) => a - b)
+        .indexOf(data.id) + 1;
     data.game = game;
     return result;
   }
