@@ -59,10 +59,12 @@ export default function Home({
   const [attributesValue, setAttributesValue] = useState(_keyValues);
   const [currentMenu, setCurrentMenu] = useState(0);
   const [clickedNode, setClickedNode] = useState(null);
-  const [clickedAtr, setClickedAtr] = useState(null);
+  const [clickedAtr, setClickedAtr] = useState(-1);
   const [matchData, setMatchData] = useState(null);
   const [toolTip, setToolTip] = useState(null);
   const [searchTeam, setSearchTeam] = useState("");
+  const [timer, setTimer] = useState(null);
+  const [skipAtr, setSkipAtr] = useState({ skip: true, skipMode: true });
   const [outcomeFilter, setOutcomeFilter] = useState({
     NONE: true,
     COMEBACK: true,
@@ -71,17 +73,34 @@ export default function Home({
   });
 
   useEffect(() => {
+    /*
     setAttributesValue(
       attributesValue.map((e, i) => {
         return i == 0 ? [2600, e[1]] : i == 2 ? [4, e[1]] : e;
       })
-    );
-    setClickedAtr(5);
+    );*/
     setSearchTeam(_teamNamesArray[0]);
+
+    const intervalId = setInterval(() => {
+      setSkipAtr({ skip: true, skipMode: true });
+    }, 2000);
+    setTimer(intervalId);
   }, []);
 
   useEffect(() => {
-    //console.time('nodesData');
+    if (!skipAtr.skipMode) {
+      //console.log("削除");
+      clearInterval(timer);
+      setTimer(null);
+    }
+    if (skipAtr.skip) {
+      setClickedAtr((clickedAtr + 1) % 8);
+      setSkipAtr({ skip: false, skipMode: true });
+    }
+  }, [skipAtr]);
+
+  useEffect(() => {
+    //console.time("nodesData");
     setNodesData(
       _nodesData.filter((e) => {
         return (
@@ -161,6 +180,8 @@ export default function Home({
                         setAttributesValue={setAttributesValue}
                         clickedAtr={clickedAtr}
                         setClickedAtr={setClickedAtr}
+                        setSkipAtr={setSkipAtr}
+                        timer={timer}
                       />
                     );
                   })}
@@ -316,6 +337,8 @@ function Attributes({
   clickedAtr,
   setClickedAtr,
   index,
+  setSkipAtr,
+  timer,
 }) {
   const clicked = clickedAtr == index;
   return (
@@ -327,6 +350,7 @@ function Attributes({
             color={clicked ? "primary" : ""}
             style={{ cursor: "pointer" }}
             onClick={() => {
+              if (timer != null) setSkipAtr({ skip: false, skipMode: false });
               setClickedAtr(clicked ? null : index);
             }}
           >
@@ -554,7 +578,7 @@ function NetworkChart({
   }
 
   if (nodesData.length == 0) {
-    console.log("no data");
+    //console.log("no data");
     return (
       <svg
         viewBox={`0 0 ${width} ${height}`}
