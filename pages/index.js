@@ -10,6 +10,7 @@ import {
   Card,
   Spacer,
   Link,
+  Dropdown,
 } from "@nextui-org/react";
 
 const translate = [
@@ -47,7 +48,12 @@ const blue = "#007bff";
 const pink = "#ff69b4";
 const yellow = "#f3bf49";
 
-export default function Home({ _nodesData, _linksData, _keyValues }) {
+export default function Home({
+  _nodesData,
+  _linksData,
+  _keyValues,
+  _teamNamesArray,
+}) {
   const [nodesData, setNodesData] = useState(_nodesData);
   const [linksData, setLinksData] = useState(_linksData);
   const [attributesValue, setAttributesValue] = useState(_keyValues);
@@ -56,6 +62,7 @@ export default function Home({ _nodesData, _linksData, _keyValues }) {
   const [clickedAtr, setClickedAtr] = useState(null);
   const [matchData, setMatchData] = useState(null);
   const [toolTip, setToolTip] = useState(null);
+  const [searchTeam, setSearchTeam] = useState("");
   const [outcomeFilter, setOutcomeFilter] = useState({
     NONE: true,
     COMEBACK: true,
@@ -70,6 +77,7 @@ export default function Home({ _nodesData, _linksData, _keyValues }) {
       })
     );
     setClickedAtr(5);
+    setSearchTeam(_teamNamesArray[0]);
   }, []);
 
   useEffect(() => {
@@ -82,12 +90,17 @@ export default function Home({ _nodesData, _linksData, _keyValues }) {
               ? f[0] <= e.properties[attributes[i]] &&
                 e.properties[attributes[i]] <= f[1]
               : false
-          ) && outcomeFilter[e.properties.analysisOutcome]
+          ) &&
+          outcomeFilter[e.properties.analysisOutcome] &&
+          (searchTeam?.currentKey == "チーム名で検索"
+            ? true
+            : e.properties.winTeamName == searchTeam?.currentKey ||
+              e.properties.loseTeamName == searchTeam?.currentKey)
         );
       })
     );
     //console.timeEnd('nodesData');
-  }, [attributesValue, outcomeFilter]);
+  }, [attributesValue, outcomeFilter, searchTeam]);
 
   useEffect(() => {
     //console.time('linksData');
@@ -151,6 +164,12 @@ export default function Home({ _nodesData, _linksData, _keyValues }) {
                       />
                     );
                   })}
+
+                  <TeamFilter
+                    searchTeam={searchTeam}
+                    setSearchTeam={setSearchTeam}
+                    teamNamesArray={_teamNamesArray}
+                  />
                 </>
               )}
               {currentMenu == 1 && (
@@ -218,8 +237,24 @@ export async function getStaticProps() {
       .extent(_nodesData.map((f) => f["properties"][e]))
       .map((f, i) => (i == 0 ? Math.floor(f) : Math.ceil(f)));
   });
+  const _teamNamesArray = [
+    ...new Set(
+      _nodesData.flatMap((item) => [
+        item.properties.loseTeamName,
+        item.properties.winTeamName,
+      ])
+    ),
+  ].map((e) => {
+    return { key: e, value: e };
+  });
+  _teamNamesArray.splice(0, 0, {
+    key: "チーム名で検索",
+    value: "デフォルト",
+    currentKey: "チーム名で検索",
+  });
+
   return {
-    props: { _nodesData, _linksData, _keyValues },
+    props: { _nodesData, _linksData, _keyValues, _teamNamesArray },
   };
 }
 
@@ -330,6 +365,28 @@ function Attributes({
         </Grid>
       </Grid.Container>
     </div>
+  );
+}
+function TeamFilter({ searchTeam, setSearchTeam, teamNamesArray }) {
+  //console.log(teamNamesArray);
+  return (
+    <Dropdown>
+      <Dropdown.Button flat>{searchTeam?.currentKey}</Dropdown.Button>
+      <Dropdown.Menu
+        aria-label="Single selection actions"
+        color="secondary"
+        disallowEmptySelection
+        selectionMode="single"
+        items={teamNamesArray}
+        selectedKeys={searchTeam?.value}
+        onSelectionChange={setSearchTeam}
+      >
+        {(item) => {
+          //console.log(item);
+          return <Dropdown.Item key={item.key}>{item.value}</Dropdown.Item>;
+        }}
+      </Dropdown.Menu>
+    </Dropdown>
   );
 }
 
