@@ -14,7 +14,7 @@ import {
 } from "@nextui-org/react";
 
 const translate = [
-  "戦闘時間",
+  "試合時間",
   "初キル時間",
   "最大マルチキル数",
   "最大キルストリーク数",
