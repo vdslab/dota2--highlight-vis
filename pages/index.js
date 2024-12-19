@@ -885,8 +885,10 @@ function LineChart({ matchData, loading, toolTip, setToolTip }) {
 
 function FaceVis({ player, xScale, yRange, isRadiant, setToolTip }) {
   return player.map((e, i) => {
-    const s = e.playbackData.streakEvents.filter((f) => f.type == "MULTI_KILL");
-    return s.map((f, i) => {
+    const s = e.playbackData?.streakEvents.filter(
+      (f) => f.type == "MULTI_KILL"
+    );
+    return s?.map((f, i) => {
       const size = f.value * 10;
       const x = xScale(f.time / 60) - size / 2;
       const y = isRadiant
